@@ -210,7 +210,7 @@ static irqreturn_t sr_interrupt(int irq, void *data)
 	} else if (sr_info->ip_type == SR_TYPE_V2) {
 		value = notifier_to_irqen_v2(sr_class->notify_flags);
 		/* Read the status bits */
-		status = sr_read_reg(sr_info, IRQSTATUS);
+                status = sr_read_reg(sr_info, IRQSTATUS);
 		status &= value;
 
 		/* Clear them by writing back */
