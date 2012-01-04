@@ -41,6 +41,7 @@
 #include <mach/hardware.h>
 
 #include "dvfs.h"
+#include "smartreflex.h"
 
 #ifdef CONFIG_SMP
 struct lpj_info {
@@ -476,6 +477,8 @@ static ssize_t store_uv_mv_table(struct cpufreq_policy *policy,
 	char size_cur[16];
 	struct opp *opp_cur;
 	struct voltagedomain *mpu_voltdm;
+	struct omap_volt_data *vdata;
+
 	mpu_voltdm = voltdm_lookup("mpu");
 
 	while(freq_table[i].frequency != CPUFREQ_TABLE_END)
@@ -502,6 +505,17 @@ static ssize_t store_uv_mv_table(struct cpufreq_policy *policy,
 			mpu_voltdm->vdd->dep_vdd_info->
 				dep_table[i].main_vdd_volt = volt_cur*1000;
 
+			if (mpu_voltdm->vdd->dep_vdd_info->dep_table[i].dep_vdd_volt > volt_cur*1000) {
+				if (volt_cur < 1100) {
+					if (volt_cur < 900)
+						mpu_voltdm->vdd->dep_vdd_info->dep_table[i].dep_vdd_volt = 750000;
+					else
+						mpu_voltdm->vdd->dep_vdd_info->dep_table[i].dep_vdd_volt = 900000;
+				}
+				else
+					mpu_voltdm->vdd->dep_vdd_info->dep_table[i].dep_vdd_volt = 1100000;
+			}
+
 			/* Alter current voltage in voltdm, if appropriate */
 			if(volt_old == mpu_voltdm->curr_volt) {
 				mpu_voltdm->curr_volt = volt_cur*1000;
@@ -510,6 +524,18 @@ static ssize_t store_uv_mv_table(struct cpufreq_policy *policy,
 			/* Non-standard sysfs interface: advance buf */
 			ret = sscanf(buf, "%s", size_cur);
 			buf += (strlen(size_cur)+1);
+
+			if (freq_table[i].frequency <= policy->max && freq_table[i].frequency >= policy->min) {
+				policy->cur = freq_table[i].frequency;
+				vdata = omap_voltage_get_curr_vdata(mpu_voltdm);
+				if (!vdata)
+					return -ENXIO;
+				omap_sr_disable(mpu_voltdm);
+				omap_voltage_calib_reset(mpu_voltdm);
+				voltdm_reset(mpu_voltdm);
+				omap_sr_enable(mpu_voltdm, vdata);
+				msleep(2000);
+			}
 		}
 		else {
 			pr_err("%s: frequency entry invalid for %u\n",
