@@ -95,14 +95,50 @@ static int _abb_set_abb(struct voltagedomain *voltdm, int abb_type)
 {
 	struct omap_ldo_abb_instance *abb = voltdm->abb;
 	int ret;
+	u8 abb_val;
 
 	ret = _abb_clear_tranx(voltdm, abb);
 	if (ret)
 		return ret;
 
+	/* Select proper Adaptive Body-Bias(ABB) */
+	switch (abb_type) {
+	case OMAP_ABB_NOMINAL_OPP:
+		/* setup to bypass */
+		voltdm->rmw(abb->setup_bits->active_fbb_mask |
+			    abb->setup_bits->active_rbb_mask,
+			    0x0,
+			    abb->setup_reg);
+		abb_val = OMAP_LDO_ABB_NOMINAL_OPP_VALUE;
+		break;
+	case OMAP_ABB_SLOW_OPP:
+		/* setup to RBB */
+		voltdm->rmw(abb->setup_bits->active_fbb_mask |
+			    abb->setup_bits->active_rbb_mask,
+			    abb->setup_bits->active_rbb_mask,
+			    abb->setup_reg);
+		abb_val = OMAP_LDO_ABB_SLOW_OPP_VALUE;
+		break;
+	case OMAP_ABB_FAST_OPP:
+		/* setup to FBB */
+		voltdm->rmw(abb->setup_bits->active_fbb_mask |
+			    abb->setup_bits->active_rbb_mask,
+			    abb->setup_bits->active_fbb_mask,
+			    abb->setup_reg);
+		abb_val = OMAP_LDO_ABB_FAST_OPP_VALUE;
+		break;
+	case OMAP_ABB_NONE:
+		/* Fall through */
+	default:
+		/* Should have never been here! */
+		WARN_ONCE(1, "%s: voltage domain %s: abb type %d!!!\n",
+			 __func__, voltdm->name, abb_type);
+		return -EINVAL;
+	}
+
 	/* program next state of ABB ldo */
 	voltdm->rmw(abb->ctrl_bits->opp_sel_mask,
-		    abb_type << __ffs(abb->ctrl_bits->opp_sel_mask),
+		    abb_val << __ffs(abb->ctrl_bits->opp_sel_mask),
 		    abb->ctrl_reg);
 
 	/* initiate ABB ldo change */
@@ -280,10 +316,6 @@ void __init omap_ldo_abb_init(struct voltagedomain *voltdm)
 	voltdm->rmw(abb->setup_bits->wait_count_mask,
 		    wait_count_val << __ffs(abb->setup_bits->wait_count_mask),
 		    abb->setup_reg);
-
-	/* Allow Forward Body-Bias */
-	voltdm->rmw(abb->setup_bits->active_fbb_mask,
-		    abb->setup_bits->active_fbb_mask, abb->setup_reg);
 
 	/* Enable ABB */
 	_abb_set_availability(voltdm, abb, true);

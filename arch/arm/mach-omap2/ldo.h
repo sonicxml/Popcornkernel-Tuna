@@ -30,18 +30,25 @@ struct omap_ldo_abb_ops {
  */
 #define OMAP_LDO_ABB_SETUP_SR2_WTCNT_VALUE_MASK	(0xFF << 8)
 #define OMAP_LDO_ABB_SETUP_ACTIVE_FBB_SEL_MASK	BIT(2)
+#define OMAP_LDO_ABB_SETUP_ACTIVE_RBB_SEL_MASK	BIT(1)
 #define OMAP_LDO_ABB_SETUP_SR2EN_MASK		BIT(0)
+
+/* OMAP3630+: RBB,FBB values */
+#define OMAP_LDO_ABB_NOMINAL_OPP_VALUE		(0)
+#define OMAP_LDO_ABB_SLOW_OPP_VALUE		(3)
+#define OMAP_LDO_ABB_FAST_OPP_VALUE		(1)
 
 /**
  * struct omap_ldo_abb_setup_bits - setup register bit defns
  * @enable_mask:	SR2EN field
  * @active_fbb_mask:	ACTIVE_FBB_SEL field
+ * @active_rbb_mask:	ACTIVE_RBB_SEL field
  * @wait_count_mask:	SR2_WTCNT_VALUE field
  */
 struct omap_ldo_abb_setup_bits {
 	u32 enable_mask;
 	u32 active_fbb_mask;
-	/* RBB is not recommended to be used and hence not supported */
+	u32 active_rbb_mask;
 	u32 wait_count_mask;
 };
 
