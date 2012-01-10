@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Pull config from file.
+#Configuration
 DATE=$(date +"%m-%d-%Y")
 HOST=$"jdkoreclipse.net"
 UPDIR=$"mirror/kernel/tuna"
@@ -16,8 +16,8 @@ DEVICE=$"Galaxy Nexus"
 cd ~/tuna/omap
 rm -rf ~/tuna/omap/AnyKernel/
 make clean
-make jdkernel_defconfig
-make -j9 ARCH=arm CROSS_COMPILE=/home/jdkoreclipse/android/4.4.4/bin/arm-none-eabi-
+make tuna_defconfig
+make -j9 ARCH=arm CROSS_COMPILE=~/android/4.4.4/bin/arm-none-eabi-
 if [ -f ~/tuna/omap/arch/arm/boot/zImage ];
      then
          echo "
