@@ -372,6 +372,12 @@ config OMAP_FIQ_DEBUGGER
 	help
 	  Enables the serial FIQ debugger on OMAP"
 
+config OMAP_IPU_DEEPIDLE
+	bool "Enable C-states > C1 when IPU is active"
+	default n
+	help
+	  Enable C-states > C1 during hardware-accelerated video playback.
+
 endmenu
 
 endif
