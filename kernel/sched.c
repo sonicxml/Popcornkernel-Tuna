@@ -8210,6 +8210,7 @@ void __init sched_init(void)
 	atomic_set(&nohz.load_balancer, nr_cpu_ids);
 	atomic_set(&nohz.first_pick_cpu, nr_cpu_ids);
 	atomic_set(&nohz.second_pick_cpu, nr_cpu_ids);
+	nohz.next_balance = jiffies;
 	spin_lock_init(&nohz.next_balance_lock);
 #endif
 	/* May be allocated at isolcpus cmdline parse time */
