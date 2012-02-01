@@ -5,7 +5,6 @@ DATE=$(date +"%m-%d-%Y")
 HOST=$"jdkoreclipse.net"
 UPDIR=$"mirror/kernel/tuna"
 PACKAGE=$"jdkernel_tuna_nightly_$DATE.zip"
-PACKAGE_SIGNED=$"jdkernel_tuna_nightly_signed_$DATE.zip"
 LCD=$"~/tuna/omap/AnyKernel"
 ServerCD=$"public_html/mirror/kernel/tuna"
 DEVICE=$"Galaxy Nexus"
