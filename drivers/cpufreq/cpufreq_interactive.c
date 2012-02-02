@@ -634,7 +634,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 		enabled = 1;
                 register_early_suspend(&interactivex_power_suspend);
-                pr_info("[imoseyon] interactivex start\n");
+                pr_info("[HOTPLUGGING] interactivex start\n");
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -662,7 +662,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 		enabled = 0;
                 unregister_early_suspend(&interactivex_power_suspend);
-                pr_info("[imoseyon] interactivex inactive\n");
+                pr_info("[HOTPLUGGING] interactivex inactive\n");
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
