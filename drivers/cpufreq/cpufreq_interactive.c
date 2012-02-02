@@ -13,6 +13,8 @@
  * GNU General Public License for more details.
  *
  * Author: Mike Chan (mike@android.com)
+ * Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
+ *   interactiveX V2
  *
  */
 
@@ -27,6 +29,7 @@
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
 #include <linux/mutex.h>
+#include <linux/earlysuspend.h>
 
 #include <asm/cputime.h>
 
@@ -58,6 +61,10 @@ static spinlock_t up_cpumask_lock;
 static cpumask_t down_cpumask;
 static spinlock_t down_cpumask_lock;
 static struct mutex set_speed_lock;
+
+// used for suspend code
+static unsigned int enabled = 0;
+static unsigned int suspendfreq = 700000;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
 static u64 hispeed_freq;
@@ -534,6 +541,54 @@ static struct attribute_group interactive_attr_group = {
 	.name = "interactive",
 };
 
+static void interactive_suspend(int suspend)
+{
+        unsigned int cpu;
+        cpumask_t tmp_mask;
+        struct cpufreq_interactive_cpuinfo *pcpu;
+
+        if (!enabled) return;
+	  if (!suspend) { 
+		mutex_lock(&set_speed_lock);
+		if (num_online_cpus() < 2) cpu_up(1);
+		for_each_cpu(cpu, &tmp_mask) {
+		  pcpu = &per_cpu(cpuinfo, cpu);
+		  smp_rmb();
+		  if (!pcpu->governor_enabled)
+		    continue;
+		  __cpufreq_driver_target(pcpu->policy, hispeed_freq, CPUFREQ_RELATION_L);
+		}
+		mutex_unlock(&set_speed_lock);
+                pr_info("[HOTPLUGGING] interactive awake cpu1 up\n");
+	  } else {
+		mutex_lock(&set_speed_lock);
+		for_each_cpu(cpu, &tmp_mask) {
+		  pcpu = &per_cpu(cpuinfo, cpu);
+		  smp_rmb();
+		  if (!pcpu->governor_enabled)
+		    continue;
+		  __cpufreq_driver_target(pcpu->policy, suspendfreq, CPUFREQ_RELATION_H);
+		}
+		if (num_online_cpus() > 1) cpu_down(1);
+		mutex_unlock(&set_speed_lock);
+                pr_info("[HOTPLUGGING] interactive suspended cpu1 down\n");
+	  }
+}
+
+static void interactive_early_suspend(struct early_suspend *handler) {
+     interactive_suspend(1);
+}
+
+static void interactive_late_resume(struct early_suspend *handler) {
+     interactive_suspend(0);
+}
+
+static struct early_suspend interactive_power_suspend = {
+        .suspend = interactive_early_suspend,
+        .resume = interactive_late_resume,
+        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
+};
+
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event)
 {
@@ -577,6 +632,9 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		if (rc)
 			return rc;
 
+		enabled = 1;
+                register_early_suspend(&interactivex_power_suspend);
+                pr_info("[imoseyon] interactivex start\n");
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -602,6 +660,9 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		sysfs_remove_group(cpufreq_global_kobject,
 				&interactive_attr_group);
 
+		enabled = 0;
+                unregister_early_suspend(&interactivex_power_suspend);
+                pr_info("[imoseyon] interactivex inactive\n");
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
