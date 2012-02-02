@@ -31,10 +31,10 @@
 #include <linux/slab.h>
 
 /* greater than 85% avg load across online CPUs increases frequency */
-#define DEFAULT_UP_FREQ_MIN_LOAD			(75)
+#define DEFAULT_UP_FREQ_MIN_LOAD			(63)
 
 /* Keep 15% of idle under the up threshold when decreasing the frequency */
-#define DEFAULT_FREQ_DOWN_DIFFERENTIAL			(15)
+#define DEFAULT_FREQ_DOWN_DIFFERENTIAL			(17)
 
 /* less than 40% avg load across online CPUs decreases frequency */
 #define DEFAULT_DOWN_FREQ_MAX_LOAD			(40)
