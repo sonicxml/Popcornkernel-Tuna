@@ -48,11 +48,11 @@ struct cpufreq_interactive_cpuinfo {
 	struct cpufreq_frequency_table *freq_table;
 	unsigned int target_freq;
 	int governor_enabled;
-};
+}; 
 
 static DEFINE_PER_CPU(struct cpufreq_interactive_cpuinfo, cpuinfo);
 
-/* Workqueues handle frequency scaling */
+/* Workqueues handle freque ncy scaling */
 static struct task_struct *up_task;
 static struct workqueue_struct *down_wq;
 static struct work_struct freq_scale_down_work;
@@ -61,13 +61,13 @@ static spinlock_t up_cpumask_lock;
 static cpumask_t down_cpumask;
 static spinlock_t down_cpumask_lock;
 static struct mutex set_speed_lock;
-
-// used for suspend code
+ 
+// used for suspend code 
 static unsigned int enabled = 0;
 static unsigned int suspendfreq = 700000;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
-static u64 hispeed_freq;
+static u64 hispeed_freq; 
 
 /* Go to hi speed when CPU load at or above this value. */
 #define DEFAULT_GO_HISPEED_LOAD 95
@@ -633,7 +633,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			return rc;
 
 		enabled = 1;
-                register_early_suspend(&interactivex_power_suspend);
+                register_early_suspend(&interactive_power_suspend);
                 pr_info("[HOTPLUGGING] interactivex start\n");
 		break;
 
@@ -661,7 +661,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 				&interactive_attr_group);
 
 		enabled = 0;
-                unregister_early_suspend(&interactivex_power_suspend);
+                unregister_early_suspend(&interactive_power_suspend);
                 pr_info("[HOTPLUGGING] interactivex inactive\n");
 		break;
 
