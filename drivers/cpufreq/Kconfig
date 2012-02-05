@@ -135,6 +135,13 @@ config CPU_FREQ_DEFAULT_GOV_LAGFREE
           governor. If unsure have a look at the help section of the
           driver. Fallback governor will be the performance governor.
 
+config CPU_FREQ_DEFAULT_GOV_LULZACTIVE	
+		bool "lulzactive"	
+		select CPU_FREQ_GOV_LULZACTIVE	
+		select CPU_FREQ_GOV_PERFORMANCE
+		help	
+			Use the CPUFreq governor 'lulzactive' as default. Fallback governor is performance governor. 
+	
 config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	bool "smartass2"
 	select CPU_FREQ_GOV_SMARTASS2
@@ -236,6 +243,14 @@ config CPU_FREQ_GOV_CONSERVATIVE
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
+
+config CPU_FREQ_GOV_LULZACTIVE
+	tristate "'lulzactive' cpufreq governor"
+	depends on CPU_FREQ
+	help
+		'lulzactive' - a new interactive governor by Tegrak!
+
+		If in doubt, say N.
 
 config CPU_FREQ_GOV_SMARTASS2
 	tristate "'smartassV2' governor"
