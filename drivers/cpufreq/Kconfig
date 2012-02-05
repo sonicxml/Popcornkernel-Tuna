@@ -48,13 +48,13 @@ choice
 	default CPU_FREQ_DEFAULT_GOV_PERFORMANCE
 	help
 	  This option sets which CPUFreq governor shall be loaded at
-	  startup. If in doubt, select 'performance'.
+	  startup. If in doubt, select 'conservative'.
 
 config CPU_FREQ_DEFAULT_GOV_PERFORMANCE
 	bool "performance"
 	select CPU_FREQ_GOV_PERFORMANCE
 	help
-	  Use the CPUFreq governor 'performance' as default. This sets
+	  Use the CPUFreq governor 'conservative' as default. This sets
 	  the frequency statically to the highest frequency supported by
 	  the CPU.
 
@@ -79,26 +79,26 @@ config CPU_FREQ_DEFAULT_GOV_USERSPACE
 config CPU_FREQ_DEFAULT_GOV_ONDEMAND
 	bool "ondemand"
 	select CPU_FREQ_GOV_ONDEMAND
-	select CPU_FREQ_GOV_PERFORMANCE
+	select CPU_FREQ_GOV_CONSERVATIVE
 	help
 	  Use the CPUFreq governor 'ondemand' as default. This allows
 	  you to get a full dynamic frequency capable system by simply
 	  loading your cpufreq low-level hardware driver.
 	  Be aware that not all cpufreq drivers support the ondemand
 	  governor. If unsure have a look at the help section of the
-	  driver. Fallback governor will be the performance governor.
+	  driver. Fallback governor will be the conservative governor.
 
 config CPU_FREQ_DEFAULT_GOV_CONSERVATIVE
 	bool "conservative"
 	select CPU_FREQ_GOV_CONSERVATIVE
-	select CPU_FREQ_GOV_PERFORMANCE
+	select CPU_FREQ_GOV_ONDEMAND
 	help
 	  Use the CPUFreq governor 'conservative' as default. This allows
 	  you to get a full dynamic frequency capable system by simply
 	  loading your cpufreq low-level hardware driver.
 	  Be aware that not all cpufreq drivers support the conservative
 	  governor. If unsure have a look at the help section of the
-	  driver. Fallback governor will be the performance governor.
+	  driver. Fallback governor will be the conservative governor.
 
 config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	bool "interactive"
@@ -113,7 +113,7 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 config CPU_FREQ_DEFAULT_GOV_HOTPLUG
 	bool "hotplug"
 	select CPU_FREQ_GOV_HOTPLUG
-	select CPU_FREQ_GOV_PERFORMANCE
+	select CPU_FREQ_GOV_CONSERVATIVE
 	help
 	  Use the CPUFreq governor 'hotplug' as default. This allows you
 	  to get a full dynamic frequency capable system with CPU
@@ -121,19 +121,19 @@ config CPU_FREQ_DEFAULT_GOV_HOTPLUG
 	  hardware driver.  Be aware that not all cpufreq drivers
 	  support the hotplug governor. If unsure have a look at
 	  the help section of the driver. Fallback governor will be the
-	  performance governor.
+	  conservative governor.
 
 config CPU_FREQ_DEFAULT_GOV_LAGFREE
         bool "lagfree"
         select CPU_FREQ_GOV_LAGFREE
-        select CPU_FREQ_GOV_PERFORMANCE
+        select CPU_FREQ_GOV_CONSERVATIVE
         help
           Use the CPUFreq governor 'lagfree' as default. This allows
           you to get a full dynamic frequency capable system by simply
           loading your cpufreq low-level hardware driver.
           Be aware that not all cpufreq drivers support the lagfree
           governor. If unsure have a look at the help section of the
-          driver. Fallback governor will be the performance governor.
+          driver. Fallback governor will be the conservative governor.
 
 config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	bool "smartass2"
