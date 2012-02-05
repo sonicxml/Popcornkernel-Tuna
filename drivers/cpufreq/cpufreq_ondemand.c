@@ -8,6 +8,7 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
+* Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  */
 
 #include <linux/kernel.h>
@@ -22,6 +23,9 @@
 #include <linux/tick.h>
 #include <linux/ktime.h>
 #include <linux/sched.h>
+#include <linux/earlysuspend.h>
+
+static unsigned int enabled = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -392,6 +396,51 @@ static struct attribute_group dbs_attr_group = {
 	.name = "ondemand",
 };
 
++static void ondemand_suspend(int suspend)
+
+{
+        unsigned int cpu;
+        cpumask_t tmp_mask;
+        struct cpu_dbs_info_s *pcpu;
+
+        if (!enabled) return;
+          if (!suspend) {
+                mutex_lock(&dbs_mutex);
+              if (num_online_cpus() < 2) cpu_up(1);
+               for_each_cpu(cpu, &tmp_mask) {
+                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
+                }
+               mutex_unlock(&dbs_mutex);
+                 pr_info("[HOTPLUGGING] ondemand awake cpu1 up\n");
+          } else {
+               mutex_lock(&dbs_mutex);
+                for_each_cpu(cpu, &tmp_mask) {
+                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H);
+                }
+                if (num_online_cpus() > 1) cpu_down(1);
+                mutex_unlock(&dbs_mutex);
+               pr_info("[HOTPLUGGING] ondemand suspended cpu1 down\n");
+          }
+}
+
+static void ondemand_early_suspend(struct early_suspend *handler) {
+     ondemand_suspend(1);
+}
+
+static void ondemand_late_resume(struct early_suspend *handler) {
+     ondemand_suspend(0);
+}
+
+static struct early_suspend ondemand_power_suspend = {
+        .suspend = ondemand_early_suspend,
+       .resume = ondemnd_late_resume,
+       .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
+};
+
 /************************** sysfs end ************************/
 
 static void dbs_freq_increase(struct cpufreq_policy *p, unsigned int freq)
@@ -684,6 +733,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		mutex_init(&this_dbs_info->timer_mutex);
 		dbs_timer_init(this_dbs_info);
+
+enabled = 1;
+        register_early_suspend(&conservativex_power_suspend);
+        pr_info("[HOTPLUGGING] ondemand start\n");
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -696,6 +749,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		if (!dbs_enable)
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &dbs_attr_group);
+
+enabled = 0;
+       unregister_early_suspend(&conservativex_power_suspend);
+       pr_info("[HOTPLUGGING] ondemand inactive\n");
 
 		break;
 
