@@ -320,9 +320,8 @@ static struct attribute *dbs_attributes[] = {
 static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
 	.name = "conservative",
-	.name = "conservativeX",
 };
-static void conservativex_suspend(int suspend)
+static void conservative_suspend(int suspend)
 {
         unsigned int cpu;
         cpumask_t tmp_mask;
@@ -338,7 +337,7 @@ static void conservativex_suspend(int suspend)
                   __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
                 }
                 mutex_unlock(&dbs_mutex);
-                pr_info("[imoseyon] conservativex awake cpu1 up\n");
+                pr_info("[HOTPLUGGING] conservative awake cpu1 up\n");
           } else {
                 mutex_lock(&dbs_mutex);
                 for_each_cpu(cpu, &tmp_mask) {
@@ -348,21 +347,21 @@ static void conservativex_suspend(int suspend)
                 }
                 if (num_online_cpus() > 1) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
-                pr_info("[imoseyon] conservativex suspended cpu1 down\n");
+                pr_info("[HOTPLUGGING] conservative suspended cpu1 down\n");
           }
 }
 
-static void conservativex_early_suspend(struct early_suspend *handler) {
-     conservativex_suspend(1);
+static void conservative_early_suspend(struct early_suspend *handler) {
+     conservative_suspend(1);
 }
 
-static void conservativex_late_resume(struct early_suspend *handler) {
-     conservativex_suspend(0);
+static void conservative_late_resume(struct early_suspend *handler) {
+     conservative_suspend(0);
 }
 
-static struct early_suspend conservativex_power_suspend = {
-        .suspend = conservativex_early_suspend,
-        .resume = conservativex_late_resume,
+static struct early_suspend conservative_power_suspend = {
+        .suspend = conservative_early_suspend,
+        .resume = conservative_late_resume,
         .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
  
@@ -598,8 +597,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		dbs_timer_init(this_dbs_info);
 			
 		enabled = 1;
-        register_early_suspend(&conservativex_power_suspend);
-        pr_info("[imoseyon] conservativex start\n");
+        register_early_suspend(&conservative_power_suspend);
+        pr_info("[HOTPLUGGING] conservative start\n");
         
 		break;
 
@@ -624,8 +623,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &dbs_attr_group);
 		enabled = 0;
-        unregister_early_suspend(&conservativex_power_suspend);
-        pr_info("[imoseyon] conservativex inactive\n");
+        unregister_early_suspend(&conservative_power_suspend);
+        pr_info("[HOTPLUGGING] conservative inactive\n");
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
@@ -649,7 +648,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 static
 #endif
 struct cpufreq_governor cpufreq_gov_conservative = {
-	.name			= "conservativeX",
+	.name			= "conservative",
 	.governor		= cpufreq_governor_dbs,
 	.max_transition_latency	= TRANSITION_LATENCY_LIMIT,
 	.owner			= THIS_MODULE,
