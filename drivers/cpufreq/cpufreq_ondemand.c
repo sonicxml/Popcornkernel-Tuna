@@ -396,7 +396,7 @@ static struct attribute_group dbs_attr_group = {
 	.name = "ondemand",
 };
 
-+static void ondemand_suspend(int suspend)
+static void ondemand_suspend(int suspend)
 
 {
         unsigned int cpu;
@@ -408,7 +408,7 @@ static struct attribute_group dbs_attr_group = {
                 mutex_lock(&dbs_mutex);
               if (num_online_cpus() < 2) cpu_up(1);
                for_each_cpu(cpu, &tmp_mask) {
-                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                   pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
                   __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
                 }
@@ -417,7 +417,7 @@ static struct attribute_group dbs_attr_group = {
           } else {
                mutex_lock(&dbs_mutex);
                 for_each_cpu(cpu, &tmp_mask) {
-                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
                   __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H);
                 }
@@ -437,7 +437,7 @@ static void ondemand_late_resume(struct early_suspend *handler) {
 
 static struct early_suspend ondemand_power_suspend = {
         .suspend = ondemand_early_suspend,
-       .resume = ondemnd_late_resume,
+       .resume = ondemand_late_resume,
        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
 
@@ -735,7 +735,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		dbs_timer_init(this_dbs_info);
 
 enabled = 1;
-        register_early_suspend(&conservativex_power_suspend);
+        register_early_suspend(&ondemand_power_suspend);
         pr_info("[HOTPLUGGING] ondemand start\n");
 		break;
 
@@ -751,7 +751,7 @@ enabled = 1;
 					   &dbs_attr_group);
 
 enabled = 0;
-       unregister_early_suspend(&conservativex_power_suspend);
+       unregister_early_suspend(&ondemand_power_suspend);
        pr_info("[HOTPLUGGING] ondemand inactive\n");
 
 		break;
