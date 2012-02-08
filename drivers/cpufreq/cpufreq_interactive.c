@@ -64,13 +64,13 @@ static struct mutex set_speed_lock;
  
 // used for suspend code 
 static unsigned int enabled = 0;
-static unsigned int suspendfreq = 700000;
+static unsigned int suspendfreq = 500000;
 
 /* Hi speed to bump to from lo speed when load burst (default max) */
 static u64 hispeed_freq; 
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 95
+#define DEFAULT_GO_HISPEED_LOAD 100
 static unsigned long go_hispeed_load;
 
 /*
