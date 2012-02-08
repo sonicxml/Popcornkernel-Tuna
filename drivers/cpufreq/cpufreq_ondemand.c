@@ -410,7 +410,7 @@ static void ondemand_suspend(int suspend)
                for_each_cpu(cpu, &tmp_mask) {
                    pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->policy, 1200000, CPUFREQ_RELATION_L);
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
                 }
                mutex_unlock(&dbs_mutex);
                  pr_info("[HOTPLUGGING] ondemand awake cpu1 up\n");
@@ -419,7 +419,7 @@ static void ondemand_suspend(int suspend)
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->policy, 500000, CPUFREQ_RELATION_H);
+                  __cpufreq_driver_target(pcpu->cur_policy, 500000, CPUFREQ_RELATION_H);
                 }
                 if (num_online_cpus() > 1) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
