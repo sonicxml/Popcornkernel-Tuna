@@ -50,6 +50,11 @@
 #define IRQENABLE_CLR		0x30
 #define SENERROR_V2		0x34
 #define ERRCONFIG_V2		0x38
+#define LVTSENVAL              0x3C
+#define LVTSENMIN              0x40
+#define LVTSENMAX              0x44
+#define LVTSENAVG              0x48
+#define LVTNVALUERECIPROCAL    0x4C
 
 /* Bit/Shift Positions */
 
@@ -63,11 +68,16 @@
 #define SRCONFIG_CLKCTRL_SHIFT		0
 
 #define SRCONFIG_ACCUMDATA_MASK		(0x3ff << 22)
+#define SRCONFIG_LVTSENNENABLE_MASK     (1 << 3)
+#define SRCONFIG_LVTSENPENABLE_MASK     (1 << 2)
 
 #define SRCONFIG_SRENABLE		BIT(11)
 #define SRCONFIG_SENENABLE		BIT(10)
 #define SRCONFIG_ERRGEN_EN		BIT(9)
 #define SRCONFIG_MINMAXAVG_EN		BIT(8)
+#define SRCONFIG_LVTSENENABLE          BIT(4)
+#define SRCONFIG_LVTSENNENABLE          BIT(3)
+#define SRCONFIG_LVTSENPENABLE          BIT(2)
 #define SRCONFIG_DELAYCTRL		BIT(2)
 
 /* AVGWEIGHT */
@@ -184,8 +194,8 @@ struct omap_smartreflex_dev_attr {
  *
  * @enable:		API to enable a particular class smaartreflex.
  * @disable:		API to disable a particular class smartreflex.
- * @init:		API to do class specific initialization (optional)
- * @deinit:		API to do class specific deinitialization (optional)
+ * @start:		API to do class specific initialization (optional)
+ * @stop:		API to do class specific deinitialization (optional)
  * @configure:		API to configure a particular class smartreflex.
  * @notify:		API to notify the class driver about an event in SR.
  *			Not needed for class3.
@@ -196,21 +206,20 @@ struct omap_smartreflex_dev_attr {
  * @class_priv_data:	Class specific private data (optional)
  */
 struct omap_sr_class_data {
-	int (*enable)(struct voltagedomain *voltdm, void *voltdm_cdata,
+	int (*enable)(struct voltagedomain *voltdm,
 			struct omap_volt_data *volt_data);
-	int (*disable)(struct voltagedomain *voltdm, void *voltdm_cdata,
-			struct omap_volt_data *volt_data, int is_volt_reset);
-	int (*init)(struct voltagedomain *voltdm, void **voltdm_cdata,
-			void *class_priv_data);
-	int (*deinit)(struct voltagedomain *voltdm, void **voltdm_cdata,
-			void *class_priv_data);
-	int (*configure)(struct voltagedomain *voltdm, void *voltdm_cdata);
-	int (*notify)(struct voltagedomain *voltdm, void *voltdm_cdata,
-			u32 status);
+	int (*disable)(struct voltagedomain *voltdm,
+			struct omap_volt_data *volt_data,
+			int is_volt_reset);
+	int (*start)(struct voltagedomain *voltdm, void *class_priv_data);
+	int (*stop)(struct voltagedomain *voltdm, void *class_priv_data);
+	int (*configure)(struct voltagedomain *voltdm);
+	int (*notify)(struct voltagedomain *voltdm, u32 status);
 	u8 notify_flags;
 	u8 class_type;
 	void *class_priv_data;
 };
+
 
 /**
  * struct omap_sr_nvalue_table	- Smartreflex n-target value info
@@ -232,7 +241,11 @@ struct omap_sr_nvalue_table {
  * @nvalue_count:	Number of distinct nvalues in the nvalue table
  * @enable_on_init:	whether this sr module needs to enabled at
  *			boot up or not.
+ * @lvt_sensor:		Flag to check whether LVT Sensor is enabled.
  * @nvalue_table:	table containing the  efuse offsets and nvalues
+ *			corresponding to them.
+ * @lvt_nvalue_count:  Number of distinct LVT nvlaues
+ * @lvt_nvalue_table:	table containing the LVT efuse offsets and LVT nvalues
  *			corresponding to them.
  * @voltdm:		Pointer to the voltage domain associated with the SR
  */
@@ -241,14 +254,17 @@ struct omap_sr_data {
 	u32				senp_mod;
 	u32				senn_mod;
 	int				nvalue_count;
+	int                             lvt_nvalue_count;
 	bool				enable_on_init;
+	bool				lvt_sensor;
 	struct omap_sr_nvalue_table	*nvalue_table;
+	struct omap_sr_nvalue_table     *lvt_nvalue_table;
 	struct voltagedomain		*voltdm;
 };
 
 /* Smartreflex module enable/disable interface */
 void omap_sr_enable(struct voltagedomain *voltdm,
-			struct omap_volt_data *volt_data);
+   struct omap_volt_data *volt_data);
 void omap_sr_disable(struct voltagedomain *voltdm);
 int omap_sr_disable_reset_volt(struct voltagedomain *voltdm);
 
@@ -276,19 +292,13 @@ static inline int sr_notifier_control(struct voltagedomain *voltdm,
 	return -EINVAL;
 }
 
-static inline int omap_sr_disable_reset_volt(
-		struct voltagedomain *voltdm) { return 0; }
+static inline void omap_sr_disable_reset_volt(
+		struct voltagedomain *voltdm) {}
 static inline void omap_sr_register_pmic(
 		struct omap_sr_pmic_data *pmic_data) {}
 static inline bool is_sr_enabled(struct voltagedomain *voltdm)
 {
 	return false;
 }
-#endif
-
-#ifdef CONFIG_OMAP_SMARTREFLEX_CLASS1P5
-extern void sr_class1p5_margin_set(unsigned int margin);
-#else
-static inline void sr_class1p5_margin_set(unsigned int margin) { }
 #endif
 #endif
