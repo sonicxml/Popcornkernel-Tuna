@@ -30,7 +30,7 @@ if [ -f ~/tuna/omap/arch/arm/boot/zImage ];
 "
          exit 0
  fi
-git clone https://github.com/jdkoreclipse/AnyKernel.git -b omap
+git clone https://github.com/sonicxml/AnyKernel.git -b omap
 rm  ~/tuna/omap/AnyKernel/kernel/zImage
 cp ~/tuna/omap/arch/arm/boot/zImage ~/tuna/omap/AnyKernel/kernel/zImage
 cd AnyKernel 
