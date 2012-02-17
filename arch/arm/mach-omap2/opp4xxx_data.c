@@ -181,8 +181,8 @@ struct omap_volt_data omap446x_vdd_iva_volt_data[] = {
 };
 
 #define OMAP4460_VDD_CORE_OPP10_UV		750000
-#define OMAP4460_VDD_CORE_OPP50_UV		900000
-#define OMAP4460_VDD_CORE_OPP100_UV		1100000
+#define OMAP4460_VDD_CORE_OPP50_UV		950000
+#define OMAP4460_VDD_CORE_OPP100_UV		1125000
 #define OMAP4460_VDD_CORE_OPP100_OV_UV		1250000
 
 struct omap_volt_data omap446x_vdd_core_volt_data[] = {
