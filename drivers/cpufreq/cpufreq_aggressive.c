@@ -1,5 +1,5 @@
 /*
- *  drivers/cpufreq/cpufreq_conservative.c
+ *  drivers/cpufreq/cpufreq_aggressive.c
  *
  *  Copyright (C)  2001 Russell King
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
@@ -9,6 +9,7 @@
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
+ * Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  */
 
 #include <linux/kernel.h>
@@ -23,14 +24,16 @@
 #include <linux/tick.h>
 #include <linux/ktime.h>
 #include <linux/sched.h>
+#include <linux/earlysuspend.h>
 
+static unsigned int enabled = 0;
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(80)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(20)
+#define DEF_FREQUENCY_UP_THRESHOLD		(60)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(30)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -48,7 +51,7 @@ static unsigned int min_sampling_rate;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
-#define DEF_SAMPLING_DOWN_FACTOR		(1)
+#define DEF_SAMPLING_DOWN_FACTOR		(3)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
@@ -92,7 +95,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
-	.freq_step = 5,
+	.freq_step = 25,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -171,7 +174,7 @@ static ssize_t show_sampling_rate_min(struct kobject *kobj,
 
 define_one_global_ro(sampling_rate_min);
 
-/* cpufreq_conservative Governor Tunables */
+/* cpufreq_aggressive Governor Tunables */
 #define show_one(file_name, object)					\
 static ssize_t show_##file_name						\
 (struct kobject *kobj, struct attribute *attr, char *buf)		\
@@ -316,9 +319,52 @@ static struct attribute *dbs_attributes[] = {
 
 static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
-	.name = "conservative",
+	.name = "aggressive",
 };
+static void aggressive_suspend(int suspend)
+{
+        unsigned int cpu;
+        cpumask_t tmp_mask;
+        struct cpu_dbs_info_s *pcpu;
 
+        if (!enabled) return;
+          if (!suspend) {
+                mutex_lock(&dbs_mutex);
+                if (num_online_cpus() < 2) cpu_up(1);
+                for_each_cpu(cpu, &tmp_mask) {
+                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
+                }
+                mutex_unlock(&dbs_mutex);
+                pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
+          } else {
+                mutex_lock(&dbs_mutex);
+                for_each_cpu(cpu, &tmp_mask) {
+                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 500000, CPUFREQ_RELATION_H);
+                }
+                if (num_online_cpus() > 1) cpu_down(1);
+                mutex_unlock(&dbs_mutex);
+                pr_info("[HOTPLUGGING] aggressive suspended cpu1 down\n");
+          }
+}
+
+static void aggressive_early_suspend(struct early_suspend *handler) {
+     aggressive_suspend(1);
+}
+
+static void aggressive_late_resume(struct early_suspend *handler) {
+     aggressive_suspend(0);
+}
+
+static struct early_suspend aggressive_power_suspend = {
+        .suspend = aggressive_early_suspend,
+        .resume = aggressive_late_resume,
+        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
+};
+ 
 /************************** sysfs end ************************/
 
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
@@ -422,7 +468,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	 * can support the current CPU usage without triggering the up
 	 * policy. To be safe, we focus 10 points under the threshold.
 	 */
-	if (max_load < (dbs_tuners_ins.down_threshold - 10)) {
+	if (max_load < (dbs_tuners_ins.down_threshold - 15)) {
 		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
 
 		this_dbs_info->requested_freq -= freq_target;
@@ -530,7 +576,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			}
 
 			/*
-			 * conservative does not implement micro like ondemand
+			 * aggressive does not implement micro like ondemand
 			 * governor, thus we are bound to jiffes/HZ
 			 */
 			min_sampling_rate =
@@ -549,7 +595,11 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		mutex_unlock(&dbs_mutex);
 
 		dbs_timer_init(this_dbs_info);
-
+			
+		enabled = 1;
+        register_early_suspend(&aggressive_power_suspend);
+        pr_info("[HOTPLUGGING] aggressive start\n");
+        
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -572,7 +622,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		if (!dbs_enable)
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &dbs_attr_group);
-
+		enabled = 0;
+        unregister_early_suspend(&aggressive_power_suspend);
+        pr_info("[HOTPLUGGING] aggressive inactive\n");
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
@@ -592,11 +644,11 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	return 0;
 }
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_AGGRESSIVE
 static
 #endif
-struct cpufreq_governor cpufreq_gov_conservative = {
-	.name			= "conservative",
+struct cpufreq_governor cpufreq_gov_aggressive = {
+	.name			= "aggressive",
 	.governor		= cpufreq_governor_dbs,
 	.max_transition_latency	= TRANSITION_LATENCY_LIMIT,
 	.owner			= THIS_MODULE,
@@ -604,22 +656,22 @@ struct cpufreq_governor cpufreq_gov_conservative = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
-	return cpufreq_register_governor(&cpufreq_gov_conservative);
+	return cpufreq_register_governor(&cpufreq_gov_aggressive);
 }
 
 static void __exit cpufreq_gov_dbs_exit(void)
 {
-	cpufreq_unregister_governor(&cpufreq_gov_conservative);
+	cpufreq_unregister_governor(&cpufreq_gov_aggressive);
 }
 
 
 MODULE_AUTHOR("Alexander Clouter <alex@digriz.org.uk>");
-MODULE_DESCRIPTION("'cpufreq_conservative' - A dynamic cpufreq governor for "
+MODULE_DESCRIPTION("'cpufreq_aggressive' - A dynamic cpufreq governor for "
 		"Low Latency Frequency Transition capable processors "
 		"optimised for use in a battery environment");
 MODULE_LICENSE("GPL");
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_AGGRESSIVE
 fs_initcall(cpufreq_gov_dbs_init);
 #else
 module_init(cpufreq_gov_dbs_init);
