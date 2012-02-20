@@ -33,7 +33,7 @@ static unsigned int enabled = 0;
  */
 
 #define DEF_FREQUENCY_UP_THRESHOLD		(60)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(30)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(35)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -334,7 +334,7 @@ static void aggressive_suspend(int suspend)
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
                 }
                 mutex_unlock(&dbs_mutex);
                 pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
@@ -343,7 +343,7 @@ static void aggressive_suspend(int suspend)
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 500000, CPUFREQ_RELATION_H);
+                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H); //this value should NEVER go under 700000
                 }
                 if (num_online_cpus() > 1) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
