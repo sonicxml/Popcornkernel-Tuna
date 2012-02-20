@@ -32,7 +32,7 @@ static unsigned int enabled = 0;
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(17)
+#define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(27)
 #define DEF_FREQUENCY_UP_THRESHOLD		(63)
 #define DEF_SAMPLING_DOWN_FACTOR		(4)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
@@ -432,7 +432,7 @@ static void gallimaufry_suspend(int suspend)
                for_each_cpu(cpu, &tmp_mask) {
                    pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L);
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this should NEVER go under 1200000
                 }
                mutex_unlock(&dbs_mutex);
                  pr_info("[HOTPLUGGING] gallimaufry awake cpu1 up\n");
@@ -441,7 +441,7 @@ static void gallimaufry_suspend(int suspend)
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 500000, CPUFREQ_RELATION_H);
+                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H);  //this should NEVER go under 700000
                 }
                 if (num_online_cpus() > 1) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
