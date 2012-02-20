@@ -592,7 +592,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		mutex_unlock(&dbs_mutex);
 
 		dbs_timer_init(this_dbs_info);
-			
+
 		enabled = 1;
         register_early_suspend(&aggressive_power_suspend);
         pr_info("[HOTPLUGGING] aggressive start\n");
