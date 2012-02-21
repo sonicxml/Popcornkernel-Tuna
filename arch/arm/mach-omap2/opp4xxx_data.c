@@ -324,13 +324,8 @@ int __init omap4_opp_init(void)
 			ARRAY_SIZE(omap446x_opp_def_list));
 
 	if (!r) {
-		if (omap4_has_mpu_1_2ghz())
 			omap4_mpu_opp_enable(1200000000);
-		/* The tuna PCB doesn't support 1.5GHz, so disable it for now */
-#ifdef CONFIG_CPUGPU_OVERCLOCK
-		if (omap4_has_mpu_1_5ghz())
 			omap4_mpu_opp_enable(1350000000);
-#endif
 	}
 
 	return r;
