@@ -374,7 +374,7 @@ config OMAP_FIQ_DEBUGGER
 
 config OMAP_IPU_DEEPIDLE
 	bool "Enable C-states > C1 when IPU is active"
-	default n
+	default y
 	help
 	  Enable C-states > C1 during hardware-accelerated video playback.
 
