@@ -1,0 +1,33 @@
+#!/system/bin/sh
+
+#Enable sysctl tweaks
+sysctl -p /system/etc/systctl.conf
+
+#Speed up file systems
+busybox mount -o remount,noatime,barrier=0,nobh /system
+busybox mount -o remount,noatime,barrier=0,nobh /data
+busybox mount -o remount,noatime,barrier=0,nobh /cache
+
+#Set SD Card Cache
+if [ -e /sys/devices/virtual/bdi/179:0/read_ahead_kb ]; then
+echo 2048 > /sys/devices/virtual/bdi/179:0/read_ahead_kb
+fi
+
+# Start crond
+echo "root:x:0:0::data/cron:/system/xbin/bash" > /system/etc/passwd
+mount -o remount,rw rootfs /
+ln -s /system/xbin /xbin
+mount -o remount,ro rootfs /
+timezone=`date +%z`
+if [ $timezone = "-0800" ]; then
+TZ=PST8PDT
+elif [ $timezone = "-0700" ]; then
+TZ=MST7MDT
+elif [ $timezone = "-0600" ]; then
+TZ=CST6CDT
+elif [ $timezone = "-0500" ]; then
+TZ=EST5EDT
+else TZ=EST5EDT
+fi
+export TZ
+crond -c /data/cron
