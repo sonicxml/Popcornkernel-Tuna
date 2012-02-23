@@ -1,0 +1,7 @@
+# Drop cache at 3am
+
+0 3 * * * sync; echo 3 > /proc/sys/vm/drop_caches
+
+# Drop cache at 3pm
+
+0 15 * * * sync; echo 3 > /proc/sys/vm/drop_caches
