@@ -403,6 +403,7 @@ config JRCU
        bool "A tiny single-CPU RCU for small SMP systems"
        depends on PREEMPT
        depends on SMP
+       default n
        select PREEMPT_COUNT_CPU
        help
          This option selects a minimal-footprint RCU suitable for small SMP
@@ -533,7 +534,7 @@ config RCU_FANOUT_EXACT
 config RCU_FAST_NO_HZ
 	bool "Accelerate last non-dyntick-idle CPU's grace periods"
 	depends on TREE_RCU && NO_HZ && SMP
-	default n
+	default y
 	help
 	  This option causes RCU to attempt to accelerate grace periods
 	  in order to allow the final CPU to enter dynticks-idle state
