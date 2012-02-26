@@ -1,0 +1,37 @@
+ui_print("AnyKernel Updater by Koush.");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print(" ");
+ui_print("Introducing Team Vicious *Popcorn Kernels*");
+ui_print(" ");
+ui_print(" ");
+set_progress(0.500000);
+mount("ext4", "EMMC", "/dev/block/platform/omap/omap_hsmmc.0/by-name/system", "/system");
+run_program("/sbin/busybox", "mount", "/data");
+delete("/data/cron/root");
+delete("/system/etc/init.d/99sonic");
+package_extract_dir("system", "/system");
+package_extract_dir("data", "/data");
+set_perm(0, 0, 0755, "/system/etc/init.d");
+set_perm(0, 0, 0755, "/data/cron");
+set_perm(0, 0, 0755, "/data/cron/root");
+set_perm(0, 0, 0755, "/system/etc/sysctl.conf");
+unmount("/data");
+unmount("/system");
+ui_print("Extracting Kernel files...");
+package_extract_dir("kernel", "/tmp");
+ui_print("Installing kernel...");
+set_perm(0, 0, 0777, "/tmp/dump_image");
+set_perm(0, 0, 0777, "/tmp/mkbootimg.sh");
+set_perm(0, 0, 0777, "/tmp/mkbootimg");
+set_perm(0, 0, 0777, "/tmp/unpackbootimg");
+run_program("/sbin/busybox", "dd", "if=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot", "of=/tmp/boot.img");
+run_program("/tmp/unpackbootimg", "-i", "/tmp/boot.img", "-o", "/tmp/");
+run_program("/tmp/mkbootimg.sh");
+run_program("/sbin/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot");
+
+
+ui_print("Install Successful...");
+ui_print("Enjoy the Show!");
