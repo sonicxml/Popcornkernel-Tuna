@@ -157,7 +157,7 @@ static struct omap_opp_def __initdata omap443x_opp_def_list[] = {
 #define OMAP4460_VDD_MPU_OPP100_UV		1000000
 #define OMAP4460_VDD_MPU_OPPTURBO_UV		1100000
 #define OMAP4460_VDD_MPU_OPPNITRO_UV		1250000
-#define OMAP4460_VDD_MPU_OPPOC_UV		1350000 //1.35GHz
+#define OMAP4460_VDD_MPU_OPPOC_UV		1420000 //1.45GHz
 
 struct omap_volt_data omap446x_vdd_mpu_volt_data[] = {
 	VOLT_DATA_DEFINE(OMAP4460_VDD_MPU_OPP50_UV, OMAP44XX_CONTROL_FUSE_MPU_OPP50, 0xf4, 0x0c, OMAP_ABB_NOMINAL_OPP),
@@ -238,7 +238,7 @@ static struct omap_opp_def __initdata omap446x_opp_def_list[] = {
 	/* MPU OPP4 - OPP-Nitro */
 	OPP_INITIALIZER("mpu", "virt_dpll_mpu_ck", "mpu", false, 1200000000, OMAP4460_VDD_MPU_OPPNITRO_UV),
 	/* MPU OPP4 - OPP-Nitro SpeedBin */
-	OPP_INITIALIZER("mpu", "virt_dpll_mpu_ck", "mpu", false, 1350000000, OMAP4460_VDD_MPU_OPPOC_UV),
+	OPP_INITIALIZER("mpu", "virt_dpll_mpu_ck", "mpu", false, 1450000000, OMAP4460_VDD_MPU_OPPOC_UV),
 	/* L3 OPP1 - OPP50 */
 	OPP_INITIALIZER("l3_main_1", "virt_l3_ck", "core", true, 100000000, OMAP4460_VDD_CORE_OPP50_UV),
 	/* L3 OPP2 - OPP100 */
@@ -327,7 +327,7 @@ int __init omap4_opp_init(void)
 
 	if (!r) {
 			omap4_mpu_opp_enable(1200000000);
-			omap4_mpu_opp_enable(1350000000);
+			omap4_mpu_opp_enable(1450000000);
 	}
 
 	return r;
