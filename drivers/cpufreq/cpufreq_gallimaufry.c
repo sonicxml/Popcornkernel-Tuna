@@ -439,7 +439,7 @@ static void gallimaufry_suspend(int suspend)
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(od_cpu_dbs_info, cpu);
                   smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H);  //this should NEVER go under 700000
+                  __cpufreq_driver_target(pcpu->cur_policy,350000, CPUFREQ_RELATION_H);  //this should NEVER go under 350000
                 }
                 if (num_online_cpus() > 1) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
