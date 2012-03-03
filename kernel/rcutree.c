@@ -487,7 +487,7 @@ static int rcu_implicit_dynticks_qs(struct rcu_data *rdp)
 	 * of the current RCU grace period.
 	 */
 	if ((curr & 0x1) == 0 || UINT_CMP_GE(curr, snap + 2)) {
-		trace_rcu_fqs(rdp->rsp->name, rdp->gpnum, rdp->cpu, "dti");
+		//trace_rcu_fqs(rdp->rsp->name, rdp->gpnum, rdp->cpu, "dti");
 		rdp->dynticks_fqs++;
 		return 1;
 	}
@@ -849,7 +849,7 @@ rcu_start_gp(struct rcu_state *rsp, unsigned long flags)
 
 	/* Advance to a new grace period and initialize state. */
 	rsp->gpnum++;
-	trace_rcu_grace_period(rsp->name, rsp->gpnum, "start");
+	//trace_rcu_grace_period(rsp->name, rsp->gpnum, "start");
 	WARN_ON_ONCE(rsp->fqs_state == RCU_GP_INIT);
 	rsp->fqs_state = RCU_GP_INIT; /* Hold off force_quiescent_state. */
 	rsp->jiffies_force_qs = jiffies + RCU_JIFFIES_TILL_FORCE_QS;
@@ -968,7 +968,7 @@ static void rcu_report_qs_rsp(struct rcu_state *rsp, unsigned long flags)
 	}
 
 	rsp->completed = rsp->gpnum;  /* Declare the grace period complete. */
-	trace_rcu_grace_period(rsp->name, rsp->completed, "end");
+	//trace_rcu_grace_period(rsp->name, rsp->completed, "end");
 	rsp->fqs_state = RCU_GP_IDLE;
 	rcu_start_gp(rsp, flags);  /* releases root node's rnp->lock. */
 }
@@ -1511,7 +1511,7 @@ static void rcu_process_callbacks(struct softirq_action *unused)
 				&__get_cpu_var(rcu_sched_data));
 	__rcu_process_callbacks(&rcu_bh_state, &__get_cpu_var(rcu_bh_data));
 	rcu_preempt_process_callbacks();
-	trace_rcu_utilization("End RCU core");
+	//trace_rcu_utilization("End RCU core");
 }
 
 /*
@@ -1705,7 +1705,7 @@ static int __rcu_pending(struct rcu_state *rsp, struct rcu_data *rdp)
 
 	/* Is the RCU core waiting for a quiescent state from this CPU? */
 	if (rcu_scheduler_fully_active &&
-	    rdp->qs_pending && !rdp->passed_quiesce) {
+	    rdp->qs_pending && !rdp->passed_quiesc) {
 
 		/*
 		 * If force_quiescent_state() coming soon and this CPU
@@ -1928,10 +1928,10 @@ rcu_init_percpu_data(int cpu, struct rcu_state *rsp, int preemptible)
 			 * set up to wait for it next time we run the
 			 * RCU core code.
 			 */
-			rdp->passed_quiesce = 0;
+			rdp->passed_quiesc = 0;
 			rdp->qs_pending = 0;
-			rdp->passed_quiesce_gpnum = rnp->gpnum - 1;
-			trace_rcu_grace_period(rsp->name, rdp->gpnum, "cpuonl");
+	//		rdp->passed_quiesc_gpnum = rnp->gpnum - 1;
+			//trace_rcu_grace_period(rsp->name, rdp->gpnum, "cpuonl");
 		}
 		raw_spin_unlock(&rnp->lock); /* irqs already disabled. */
 		rnp = rnp->parent;
