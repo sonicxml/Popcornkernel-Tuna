@@ -1145,10 +1145,7 @@ resume:
 		 * move only zero ref count dentries to the end 
 		 * of the unused list for prune_dcache
 		 */
-
-		if (dentry->d_count) {
-			dentry_lru_del(dentry);
-		} else if (!(dentry->d_flags & DCACHE_SHRINK_LIST)) {
+		if (!dentry->d_count) {
 			dentry_lru_move_tail(dentry);
 			found++;
 		} else {
