@@ -4,11 +4,11 @@
  *  Copyright (C)  2001 Russell King
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
+ *            (C)  2012 Jdkoreclipse <jdkoreclipse@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
-* Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  */
 
 #include <linux/kernel.h>
@@ -32,8 +32,8 @@ static unsigned int enabled = 0;
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(35)
-#define DEF_FREQUENCY_UP_THRESHOLD		(65)
+#define DEF_FREQUENCY_DOWN_DIFFERENTIAL		(30)
+#define DEF_FREQUENCY_UP_THRESHOLD		(70)
 #define DEF_SAMPLING_DOWN_FACTOR		(4)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_DOWN_DIFFERENTIAL	(3)
@@ -839,6 +839,7 @@ static void __exit cpufreq_gov_dbs_exit(void)
 
 MODULE_AUTHOR("Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>");
 MODULE_AUTHOR("Alexey Starikovskiy <alexey.y.starikovskiy@intel.com>");
+MODULE_AUTHOR("Shane Jdkoreclipse <jdkoreclipse@gmail.com>");
 MODULE_DESCRIPTION("'cpufreq_gallimaufry' - A dynamic cpufreq governor for "
 	"Low Latency Frequency Transition capable processors");
 MODULE_LICENSE("GPL");

@@ -5,11 +5,11 @@
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
  *            (C)  2009 Alexander Clouter <alex@digriz.org.uk>
+ *            (C)  2012 Jdkoreclipse <jdkoreclipse@gmail.com.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
- * Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  */
 
 #include <linux/kernel.h>
@@ -25,15 +25,14 @@
 #include <linux/ktime.h>
 #include <linux/sched.h>
 #include <linux/earlysuspend.h>
-
 static unsigned int enabled = 0;
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(60)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(35)
+#define DEF_FREQUENCY_UP_THRESHOLD		(70)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(30)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -93,7 +92,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
-	.freq_step = 25,
+	.freq_step = 15,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -655,6 +654,7 @@ static void __exit cpufreq_gov_dbs_exit(void)
 
 
 MODULE_AUTHOR("Alexander Clouter <alex@digriz.org.uk>");
+MODULE_AUTHOR("Shane Jdkoreclipse <jdkoreclipse@gmail.com>");
 MODULE_DESCRIPTION("'cpufreq_aggressive' - A dynamic cpufreq governor for "
 		"Low Latency Frequency Transition capable processors "
 		"optimised for use in a battery environment");
