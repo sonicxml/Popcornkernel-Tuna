@@ -675,11 +675,11 @@ static int __init sr_class1p5_driver_init(void)
 	if (!(cpu_is_omap3630() || cpu_is_omap44xx()))
 		return -EINVAL;
 
-	/* Add 10mV margin as 4460 has Class3 ntarget values */
+	/* Add 25mV margin as 4460 has Class3 ntarget values */
 	if (!class1p5_margin && cpu_is_omap446x()) {
-		pr_info("%s: OMAP4460: add 10mV margin for class 1.5\n",
+		pr_info("%s: OMAP4460: add 25mV margin for class 1.5\n",
 			__func__);
-		class1p5_margin = 10000;
+		class1p5_margin = 25000;
 	}
 
 	r = sr_register_class(&class1p5_data);
