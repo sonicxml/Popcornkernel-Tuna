@@ -5,6 +5,7 @@
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
  *            (C)  2009 Alexander Clouter <alex@digriz.org.uk>
+ *            (C)  2012 Sonicxml <sonicxml@gmail.com.com>
  *            (C)  2012 Jdkoreclipse <jdkoreclipse@gmail.com.com>
  * Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  *
@@ -27,6 +28,11 @@
 #include <linux/sched.h>
 #include <linux/earlysuspend.h>
 static unsigned int enabled = 0;
+static unsigned int minfreq = 350000;
+static unsigned int goodfreq = 920000;
+static unsigned int higherload = 85;
+static unsigned int hotplug_load = 50;
+
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
@@ -319,49 +325,7 @@ static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
 	.name = "aggressive",
 };
-static void aggressive_suspend(int suspend)
-{
-        unsigned int cpu;
-        cpumask_t tmp_mask;
-        struct cpu_dbs_info_s *pcpu;
 
-        if (!enabled) return;
-          if (!suspend) {
-                mutex_lock(&dbs_mutex);
-                if (num_online_cpus() < 2) cpu_up(1);
-                for_each_cpu(cpu, &tmp_mask) {
-                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
-                  smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
-                }
-                mutex_unlock(&dbs_mutex);
-                pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
-          } else {
-                mutex_lock(&dbs_mutex);
-                for_each_cpu(cpu, &tmp_mask) {
-                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
-                  smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H); //this value should NEVER go under 700000
-                }
-                if (num_online_cpus() > 1) cpu_down(1);
-                mutex_unlock(&dbs_mutex);
-                pr_info("[HOTPLUGGING] aggressive suspended cpu1 down\n");
-          }
-}
-
-static void aggressive_early_suspend(struct early_suspend *handler) {
-     aggressive_suspend(1);
-}
-
-static void aggressive_late_resume(struct early_suspend *handler) {
-     aggressive_suspend(0);
-}
-
-static struct early_suspend aggressive_power_suspend = {
-        .suspend = aggressive_early_suspend,
-        .resume = aggressive_late_resume,
-        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
-};
  
 /************************** sysfs end ************************/
 
@@ -441,7 +405,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	/* Check for frequency increase */
 	if (max_load > dbs_tuners_ins.up_threshold) {
 		this_dbs_info->down_skip = 0;
-
+		if (higherload > max_load && goodfreq <= policy->max)
+			__cpufreq_driver_target(policy, goodfreq,
+				CPUFREQ_RELATION_H);
+		else		
 		/* if we are already at full speed then break out early */
 		if (this_dbs_info->requested_freq == policy->max)
 			return;
@@ -520,7 +487,113 @@ static inline void dbs_timer_exit(struct cpu_dbs_info_s *dbs_info)
 	dbs_info->enable = 0;
 	cancel_delayed_work_sync(&dbs_info->work);
 }
+static void aggressive_suspend(int suspend)
+{
+        unsigned int cpu;
+        cpumask_t tmp_mask;
+        struct cpu_dbs_info_s *pcpu;
+//	dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info);
+	unsigned int load = 0;
+	unsigned int max_load = 0;
+        struct cpu_dbs_info_s *this_dbs_info;
+	struct cpufreq_policy *policy;
+	unsigned int j;
+	if (!this_dbs_info->enable)
+		return 0;
+	policy = this_dbs_info->cur_policy;
+	
 
+	/*
+	 * Every sampling_rate, we check, if current idle time is less
+	 * than 20% (default), then we try to increase frequency
+	 * Every sampling_rate*sampling_down_factor, we check, if current
+	 * idle time is more than 80%, then we try to decrease frequency
+	 *
+	 * Any frequency increase takes it to the maximum frequency.
+	 * Frequency reduction happens at minimum steps of
+	 * 5% (default) of maximum frequency
+	 */
+
+	/* Get Absolute Load */
+	for_each_cpu(j, policy->cpus) {
+		struct cpu_dbs_info_s *j_dbs_info;
+		cputime64_t cur_wall_time, cur_idle_time;
+		unsigned int idle_time, wall_time;
+
+		j_dbs_info = &per_cpu(cs_cpu_dbs_info, j);
+
+		cur_idle_time = get_cpu_idle_time(j, &cur_wall_time);
+
+		wall_time = (unsigned int) cputime64_sub(cur_wall_time,
+				j_dbs_info->prev_cpu_wall);
+		j_dbs_info->prev_cpu_wall = cur_wall_time;
+
+		idle_time = (unsigned int) cputime64_sub(cur_idle_time,
+				j_dbs_info->prev_cpu_idle);
+		j_dbs_info->prev_cpu_idle = cur_idle_time;
+
+		if (dbs_tuners_ins.ignore_nice) {
+			cputime64_t cur_nice;
+			unsigned long cur_nice_jiffies;
+
+			cur_nice = cputime64_sub(kstat_cpu(j).cpustat.nice,
+					 j_dbs_info->prev_cpu_nice);
+			/*
+			 * Assumption: nice time between sampling periods will
+			 * be less than 2^32 jiffies for 32 bit sys
+			 */
+			cur_nice_jiffies = (unsigned long)
+					cputime64_to_jiffies64(cur_nice);
+
+			j_dbs_info->prev_cpu_nice = kstat_cpu(j).cpustat.nice;
+			idle_time += jiffies_to_usecs(cur_nice_jiffies);
+		}
+
+		if (unlikely(!wall_time || wall_time < idle_time))
+			continue;
+
+		load = 100 * (wall_time - idle_time) / wall_time;
+
+		if (load > max_load)
+			max_load = load;
+	}
+        if (!enabled) return;
+          if (!suspend) {
+                mutex_lock(&dbs_mutex);
+		if (num_online_cpus() < 2 && (this_dbs_info->requested_freq > minfreq || max_load > hotplug_load)) cpu_up(1);
+                for_each_cpu(cpu, &tmp_mask) {
+                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
+                }
+                mutex_unlock(&dbs_mutex);
+                pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
+          } else {
+                mutex_lock(&dbs_mutex);
+                for_each_cpu(cpu, &tmp_mask) {
+                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
+                  smp_rmb();
+                  __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H); //this value should NEVER go under 700000
+                }
+                if (num_online_cpus() > 1) cpu_down(1);
+                mutex_unlock(&dbs_mutex);
+                pr_info("[HOTPLUGGING] aggressive suspended cpu1 down\n");
+          }
+}
+
+static void aggressive_early_suspend(struct early_suspend *handler) {
+     aggressive_suspend(1);
+}
+
+static void aggressive_late_resume(struct early_suspend *handler) {
+     aggressive_suspend(0);
+}
+
+static struct early_suspend aggressive_power_suspend = {
+        .suspend = aggressive_early_suspend,
+        .resume = aggressive_late_resume,
+        .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
+};
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				   unsigned int event)
 {
@@ -655,6 +728,7 @@ static void __exit cpufreq_gov_dbs_exit(void)
 
 
 MODULE_AUTHOR("Alexander Clouter <alex@digriz.org.uk>");
+MODULE_AUTHOR("Trevin Sonicxml <sonicxml@gmail.com>");
 MODULE_AUTHOR("Shane Jdkoreclipse <jdkoreclipse@gmail.com>");
 MODULE_DESCRIPTION("'cpufreq_aggressive' - A dynamic cpufreq governor for "
 		"Low Latency Frequency Transition capable processors "
