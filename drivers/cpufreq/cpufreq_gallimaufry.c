@@ -5,7 +5,7 @@
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
  *                      Jun Nakajima <jun.nakajima@intel.com>
  *            (C)  2012 Jdkoreclipse <jdkoreclipse@gmail.com>
- *            (C)  2012 Sonicxml <sonicxml@gmail.com>
+ *			Sonicxml <sonicxml@gmail.com>
  * Modified for early suspend support and hotplugging by imoseyon (imoseyon@gmail.com)
  *
  * This program is free software; you can redistribute it and/or modify
