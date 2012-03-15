@@ -32,7 +32,7 @@ static unsigned int minfreq = 350000;
 static unsigned int goodfreq = 920000;
 static unsigned int higherload = 85;
 static unsigned int hotplug_load = 50;
-static unsigned int current_load = 0;
+static unsigned int current_load = 100;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
