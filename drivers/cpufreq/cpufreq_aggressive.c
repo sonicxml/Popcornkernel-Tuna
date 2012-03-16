@@ -495,23 +495,21 @@ static void aggressive_suspend(int suspend)
         struct cpu_dbs_info_s *pcpu;
         if (!enabled) return;
           if (!suspend) {
-		if (num_online_cpus() == 1 && max_load > hotplug_load) cpu_up(1);
-                mutex_lock(&dbs_mutex);
-                for_each_cpu(cpu, &tmp_mask) {
-                  pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
-                  smp_rmb();
-                  __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
-                }	
-                mutex_unlock(&dbs_mutex);
-                pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
+		if (num_online_cpus() == 1 && max_load > hotplug_load) {
+                	mutex_lock(&dbs_mutex);
+			cpu_up(1);
+                	__cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
+                	mutex_unlock(&dbs_mutex);
+                	pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
+		}
           } else {
                 mutex_lock(&dbs_mutex);
-                for_each_cpu(cpu, &tmp_mask) {
+/*                for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
-                  smp_rmb();
+                  smp_rmb();*/
                   __cpufreq_driver_target(pcpu->cur_policy, 700000, CPUFREQ_RELATION_H); //this value should NEVER go under 700000
-                }
-                if (num_online_cpus() > 1) cpu_down(1);
+//                }
+                if (num_online_cpus() == 2) cpu_down(1);
                 mutex_unlock(&dbs_mutex);
                 pr_info("[HOTPLUGGING] aggressive suspended cpu1 down\n");
           }
