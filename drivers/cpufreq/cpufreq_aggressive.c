@@ -32,7 +32,7 @@ static unsigned int minfreq = 350000;
 static unsigned int goodfreq = 920000;
 static unsigned int higherload = 85;
 static unsigned int hotplug_load = 50;
-static unsigned int current_load = 100;
+static unsigned int max_load = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -333,7 +333,6 @@ static struct attribute_group dbs_attr_group = {
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
 	unsigned int load = 0;
-	unsigned int max_load = 0;
 	unsigned int freq_target;
 
 	struct cpufreq_policy *policy;
@@ -496,13 +495,13 @@ static void aggressive_suspend(int suspend)
         struct cpu_dbs_info_s *pcpu;
         if (!enabled) return;
           if (!suspend) {
-//                mutex_lock(&dbs_mutex);
-		if (num_online_cpus() == 1 && current_load > hotplug_load) cpu_up(1);
+		if (num_online_cpus() == 1 && max_load > hotplug_load) cpu_up(1);
+                mutex_lock(&dbs_mutex);
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
                   smp_rmb();
                   __cpufreq_driver_target(pcpu->cur_policy, 1200000, CPUFREQ_RELATION_L); //this value should NEVER go under 1200000
-                }
+                }	
                 mutex_unlock(&dbs_mutex);
                 pr_info("[HOTPLUGGING] aggressive awake cpu1 up\n");
           } else {
