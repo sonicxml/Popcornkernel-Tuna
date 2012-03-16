@@ -393,7 +393,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 		if (load > max_load)
 			max_load = load;
-			current_load = load;
 	}
 
 	/*
