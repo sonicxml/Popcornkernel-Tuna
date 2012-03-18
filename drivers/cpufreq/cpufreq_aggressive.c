@@ -495,8 +495,8 @@ static void aggressive_suspend(int suspend)
         struct cpu_dbs_info_s *pcpu;
         if (!enabled) return;
           if (!suspend) {
+                mutex_lock(&dbs_mutex);		
 		if (num_online_cpus() == 1 && max_load > hotplug_load) cpu_up(1);
-                mutex_lock(&dbs_mutex);
                 for_each_cpu(cpu, &tmp_mask) {
                   pcpu = &per_cpu(cs_cpu_dbs_info, cpu);
                   smp_rmb();
