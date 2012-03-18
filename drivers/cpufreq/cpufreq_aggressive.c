@@ -33,7 +33,6 @@ static unsigned int goodfreq = 920000;
 static unsigned int higherload = 85;
 static unsigned int hotplug_load = 50;
 static unsigned int max_load = 0;
-static unsigned int registration = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -518,7 +517,7 @@ static void aggressive_suspend(int suspend)
 }
 
 static void aggressive_early_suspend(struct early_suspend *handler) {
-     if (!registration) aggressive_suspend(1);
+     aggressive_suspend(1);
 }
 
 static void aggressive_late_resume(struct early_suspend *handler) {
@@ -595,10 +594,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		dbs_timer_init(this_dbs_info);
 
 		enabled = 1;
-		registration = 1;
-        		register_early_suspend(&aggressive_power_suspend);
-		registration = 0;
-        		pr_info("[HOTPLUGGING] aggressive start\n");
+        register_early_suspend(&aggressive_power_suspend);
+        pr_info("[HOTPLUGGING] aggressive start\n");
         
 		break;
 
