@@ -28,6 +28,7 @@
 #include <linux/earlysuspend.h>
 
 static unsigned int enabled = 0;
+static unsigned int registration = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -450,7 +451,7 @@ static void gallimaufry_suspend(int suspend)
 }
 
 static void gallimaufry_early_suspend(struct early_suspend *handler) {
-     gallimaufry_suspend(1);
+     if (!registration) gallimaufry_suspend(1);
 }
 
 static void gallimaufry_late_resume(struct early_suspend *handler) {
@@ -770,7 +771,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		dbs_timer_init(this_dbs_info);
 
 enabled = 1;
+registration = 1;
         register_early_suspend(&gallimaufry_power_suspend);
+registration = 0;
         pr_info("[HOTPLUGGING] gallimaufry start\n");
 		break;
 
