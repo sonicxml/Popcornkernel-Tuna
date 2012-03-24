@@ -485,6 +485,9 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				CPUFREQ_RELATION_H);
 		return;
 	}
+	if (max_load < 87 && this_dbs_info->requested_freq == 1200000)	
+		__cpufreq_driver_target(policy, 920000,
+				CPUFREQ_RELATION_H);
 }
 
 static void do_dbs_timer(struct work_struct *work)
