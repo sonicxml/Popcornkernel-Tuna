@@ -371,14 +371,6 @@ config OMAP_FIQ_DEBUGGER
 	help
 	  Enables the serial FIQ debugger on OMAP"
 
-config OMAP_IPU_DEEPIDLE
-	bool "Enable C-states > C1 when IPU is active"
-	default y
-	help
-	  Enable C-states > C1 during hardware-accelerated video playback.
-
-endmenu
-
 config FORCE_FAST_CHARGE
 	bool "Force AC charge mode at will"
 	default y
@@ -386,4 +378,5 @@ config FORCE_FAST_CHARGE
 	  A simple sysfs interface to force adapters that
 	  are detected as USB to charge as AC.
 
+endmenu
 endif
