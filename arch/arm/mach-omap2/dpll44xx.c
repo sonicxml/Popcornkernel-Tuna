@@ -192,7 +192,7 @@ int omap4_prcm_freq_update(void)
 
 #define OMAP_1_5GHz	1500000000
 #define OMAP_1_2GHz	1200000000
-#define OMAP_1GHz	1000000000
+#define OMAP_1GHz	1060000000
 #define OMAP_920MHz	920000000
 #define OMAP_748MHz	748000000
 
