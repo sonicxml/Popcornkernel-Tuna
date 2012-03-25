@@ -4,5 +4,6 @@ ashldi3.S
 piggy.gzip
 piggy.lzo
 piggy.lzma
+piggy.xzkern
 vmlinux
 vmlinux.lds
