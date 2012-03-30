@@ -179,8 +179,8 @@ static inline int performance_multiplier(void)
 	 */
 	/* mult += 2 * get_loadavg(); */
 
-	/* for IO wait tasks (per cpu!) we add 1x each */
-	mult += 2 * nr_iowait_cpu(smp_processor_id());
+	/* for IO wait tasks (per cpu!) we add 2x each */
+	mult += 4 * nr_iowait_cpu(smp_processor_id());
 
 	return mult;
 }
