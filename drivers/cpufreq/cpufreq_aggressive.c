@@ -485,24 +485,9 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				CPUFREQ_RELATION_H);
 		return;
 	}
-	/* If max load is Less than 85 and the frequency is 1.2GHz, drop it down to 1.06GHz */
 	if (max_load < 85 && this_dbs_info->requested_freq == 1200000)	
 		__cpufreq_driver_target(policy, 1060000,
 				CPUFREQ_RELATION_H);
-	/* Debugging Stuff 
-	* pr_info("Load: %d \n", max_load);
-	* pr_info("Frequency: %d \n", this_dbs_info->requested_freq);
-	*/
-	/* If 2 cpu's up and max load less than 30, hotplug */
-	if (num_online_cpus() <2 && max_load > 30) {
-		cpu_up(1);
-		pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Up\n");
-	}
-	else if (num_online_cpus() > 1 && max_load < 30) {
-		cpu_down(1);
-		pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Down\n");
-	}
-	
 }
 
 static void do_dbs_timer(struct work_struct *work)
