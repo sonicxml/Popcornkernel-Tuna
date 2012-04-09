@@ -109,6 +109,14 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
 	  loading your cpufreq low-level hardware driver, using the
 	  'interactive' governor for latency-sensitive workloads.
 
+config CPU_FREQ_DEFAULT_GOV_INTERACTIVEX
+	bool "interactiveX"
+	select CPU_FREQ_GOV_INTERACTIVEX
+	help
+	  Use the CPUFreq governor 'interactiveX' as default. This allows
+	  you to get a full dynamic cpu frequency capable system by simply
+	  loading your cpufreq low-level hardware driver, using the
+	  'interactiveX' governor for latency-sensitive workloads.
 
 config CPU_FREQ_DEFAULT_GOV_HOTPLUG
 	bool "hotplug"
@@ -133,7 +141,15 @@ config CPU_FREQ_DEFAULT_GOV_GALLIMAUFRY
 	bool "gallimaufry"
 	select CPU_FREQ_GOV_GALLIMAUFRY
 	help
-	A pimped out ondemand governor.
+	A modified ondemand governor.
+        This features earlysuspend, hotplugging, a
+        2-phase algo, and tweaks to make it more aggressive.
+
+config CPU_FREQ_DEFAULT_GOV_GALLIMAUFRYX
+	bool "gallimaufryX"
+	select CPU_FREQ_GOV_GALLIMAUFRYX
+	help
+	A modified ondemand governor.
         This features earlysuspend, hotplugging, a
         2-phase algo, and tweaks to make it more aggressive.
 
@@ -141,7 +157,15 @@ config CPU_FREQ_DEFAULT_GOV_AGGRESSIVE
 	bool "aggressive"
 	select CPU_FREQ_GOV_AGGRESSIVE
 	help
-	A pimped out conservative governor.
+	A modified conservative governor.
+        This features earlysuspend, hotplugging,
+        and tweaks to make it more aggressive.
+
+config CPU_FREQ_DEFAULT_GOV_AGGRESSIVEX
+	bool "aggressiveX"
+	select CPU_FREQ_GOV_AGGRESSIVEX
+	help
+	A modified conservative governor.
         This features earlysuspend, hotplugging,
         and tweaks to make it more aggressive.
 endchoice
@@ -218,6 +242,13 @@ config CPU_FREQ_GOV_INTERACTIVE
 
 	  If in doubt, say N.
 
+config CPU_FREQ_GOV_INTERACTIVEX
+	tristate "'interactiveX' cpufreq policy governor"
+	help
+	  'interactiveX' - interactive governor with early suspend support added.	
+	   This governor uses hotplug to shutdown and start up cpu1 when suspended.
+	   If in doubt, say N.
+
 config CPU_FREQ_GOV_CONSERVATIVE
 	tristate "'conservative' cpufreq governor"
 	depends on CPU_FREQ
@@ -245,19 +276,38 @@ config CPU_FREQ_GOV_SMARTASS2
 	tristate "'smartassV2' governor"
   depends on CPU_FREQ
 	help
-	Help is a lie.
+	  Smartassv2 by Erasmux.
+	  If in doubt, say N.
 
 config CPU_FREQ_GOV_GALLIMAUFRY
 	tristate "'gallimaufry' governor"
   depends on CPU_FREQ
 	help
-	Help is a lie.
+	  'gallimaufry' - this governor is a modified ondemand.
+	   If in doubt, say N.
+
+config CPU_FREQ_GOV_GALLIMAUFRYX
+	tristate "'gallimaufryX' governor"
+  depends on CPU_FREQ
+	help
+	  'gallimaufryX' - this governor is a modified ondemand with 
+	   screen-off hotplugging support.
+	   If in doubt, say N.
 
 config CPU_FREQ_GOV_AGGRESSIVE
 	tristate "'aggressive' governor"
   depends on CPU_FREQ
 	help
-	Help is a lie.
+	  'aggressive' - this governor is a modified conservative.
+	   If in doubt, say N.
+
+config CPU_FREQ_GOV_AGGRESSIVEX
+	tristate "'aggressiveX' governor"
+  depends on CPU_FREQ
+	help
+	  'aggressiveX' - this governor is a modified conservative with 
+	   screen-off hotplugging support.
+	   If in doubt, say N.
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
