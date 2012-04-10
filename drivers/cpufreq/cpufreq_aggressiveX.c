@@ -320,10 +320,9 @@ static struct attribute *dbs_attributes[] = {
 
 static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
-	.name = "aggressive",
 	.name = "aggressiveX",
 };
-static void aggressive_suspend(int suspend)
+static void aggressivex_suspend(int suspend)
 {
         unsigned int cpu;
         cpumask_t tmp_mask;
@@ -353,17 +352,17 @@ static void aggressive_suspend(int suspend)
           }
 }
 
-static void aggressive_early_suspend(struct early_suspend *handler) {
-     if (!registration) aggressive_suspend(1);
+static void aggressivex_early_suspend(struct early_suspend *handler) {
+     if (!registration) aggressivex_suspend(1);
 }
 
-static void aggressive_late_resume(struct early_suspend *handler) {
-     aggressive_suspend(0);
+static void aggressivex_late_resume(struct early_suspend *handler) {
+     aggressivex_suspend(0);
 }
 
-static struct early_suspend aggressive_power_suspend = {
-        .suspend = aggressive_early_suspend,
-        .resume = aggressive_late_resume,
+static struct early_suspend aggressivex_power_suspend = {
+        .suspend = aggressivex_early_suspend,
+        .resume = aggressivex_late_resume,
         .level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
 };
  
@@ -593,7 +592,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		enabled = 1;
 		registration = 1;
-        register_early_suspend(&aggressive_power_suspend);
+        register_early_suspend(&aggressivex_power_suspend);
 		registration = 0;
         pr_info("[HOTPLUGGING] aggressiveX start\n");
         
@@ -620,7 +619,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &dbs_attr_group);
 		enabled = 0;
-        unregister_early_suspend(&aggressive_power_suspend);
+        unregister_early_suspend(&aggressivex_power_suspend);
         pr_info("[HOTPLUGGING] aggressiveX inactive\n");
 		break;
 
@@ -644,7 +643,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_AGGRESSIVEX
 static
 #endif
-struct cpufreq_governor cpufreq_gov_aggressive = {
+struct cpufreq_governor cpufreq_gov_aggressivex = {
 	.name			= "aggressivex",
 	.governor		= cpufreq_governor_dbs,
 	.max_transition_latency	= TRANSITION_LATENCY_LIMIT,
@@ -653,12 +652,12 @@ struct cpufreq_governor cpufreq_gov_aggressive = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
-	return cpufreq_register_governor(&cpufreq_gov_aggressive);
+	return cpufreq_register_governor(&cpufreq_gov_aggressivex);
 }
 
 static void __exit cpufreq_gov_dbs_exit(void)
 {
-	cpufreq_unregister_governor(&cpufreq_gov_aggressive);
+	cpufreq_unregister_governor(&cpufreq_gov_aggressivex);
 }
 
 

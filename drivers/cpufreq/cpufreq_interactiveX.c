@@ -664,7 +664,7 @@ static int cpufreq_governor_interactivex(struct cpufreq_policy *policy,
 				&interactivex_attr_group);
 
 		enabled = 0;
-                unregister_early_suspend(&interactive_power_suspend);
+                unregister_early_suspend(&interactivex_power_suspend);
                 pr_info("[HOTPLUGGING] interactivex inactive\n");
 		break;
 

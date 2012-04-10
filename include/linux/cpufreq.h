@@ -361,15 +361,24 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE)
 extern struct cpufreq_governor cpufreq_gov_interactive;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactive)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVEX)
+extern struct cpufreq_governor cpufreq_gov_interactivex;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactivex)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_SMARTASS2)
 extern struct cpufreq_governor cpufreq_gov_smartass2;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_smartass2)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_GALLIMAUFRY)
 extern struct cpufreq_governor cpufreq_gov_gallimaufry;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_gallimaufry)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_GALLIMAUFRYX)
+extern struct cpufreq_governor cpufreq_gov_gallimaufryx;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_gallimaufryx)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_AGGRESSIVE)
 extern struct cpufreq_governor cpufreq_gov_aggressive;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_aggressive)
+#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_AGGRESSIVEX)
+extern struct cpufreq_governor cpufreq_gov_aggressivex;
+#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_aggressivex)
 #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_HOTPLUG)
 extern struct cpufreq_governor cpufreq_gov_hotplug;
 #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_hotplug)
