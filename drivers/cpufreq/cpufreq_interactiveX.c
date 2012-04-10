@@ -172,12 +172,16 @@ static void cpufreq_interactivex_timer(unsigned long data)
 		cpu_load = load_since_change;
 
 	if (cpu_load >= go_hispeed_load) {
-		if (pcpu->policy->cur == pcpu->policy->min)
+		if (pcpu->policy->cur == pcpu->policy->min) {
 			new_freq = hispeed_freq;
-		else
+		}
+		else {
 			new_freq = pcpu->policy->max * cpu_load / 100;
+			if (new_freq < hispeed_freq)
+				new_freq = hispeed_freq;
+		}
 	} else {
-		new_freq = pcpu->policy->cur * cpu_load / 100;
+		new_freq = pcpu->policy->max * cpu_load / 100;
 	}
 
 	if (cpufreq_frequency_table_target(pcpu->policy, pcpu->freq_table,
