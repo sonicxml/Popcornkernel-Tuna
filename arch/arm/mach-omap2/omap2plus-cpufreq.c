@@ -67,6 +67,7 @@ static unsigned int current_target_freq;
 static unsigned int screen_off_max_freq;
 static bool omap_cpufreq_ready;
 static bool omap_cpufreq_suspended;
+static int oc_val;
 
 static unsigned int omap_getspeed(unsigned int cpu)
 {
@@ -441,6 +442,43 @@ struct opp {
         struct device_opp *dev_opp;
 };
 
+/*
+ * Variable GPU OC - sysfs interface for cycling through different GPU top speeds
+ * Author: imoseyon@gmail.com
+ *
+*/
+static ssize_t show_gpu_oc(struct cpufreq_policy *policy, char *buf)
+{
+       return sprintf(buf, "%d\n", oc_val);
+}
+
+static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size_t size)
+{
+       int prev_oc, ret1, ret2; 
+        struct device *dev;
+       unsigned long gpu_freqs[4] = {307200000,384000000,460000000,512000000};
+
+       prev_oc = oc_val;
+       if (prev_oc < 0 || prev_oc > 3) {
+               // shouldn't be here
+               pr_info("[GPU_OC] GPU_OC value out of range - bailing\n"); 
+               return size;
+       }
+       
+       sscanf(buf, "%d\n", &oc_val);
+       if (oc_val < 0 ) oc_val = 0;
+       if (oc_val > 3 ) oc_val = 3;
+       if (prev_oc == oc_val) return size;
+
+        dev = omap_hwmod_name_get_dev("gpu");
+        ret1 = opp_disable(dev, gpu_freqs[prev_oc]);
+        ret2 = opp_enable(dev, gpu_freqs[oc_val]);
+        pr_info("[GPU_OC] GPU top speed changed from %lu to %lu (%d,%d)\n", 
+               gpu_freqs[prev_oc], gpu_freqs[oc_val], ret1, ret2);
+       
+       return size;
+}
+
 static ssize_t show_uv_mv_table(struct cpufreq_policy *policy, char *buf)
 {
 	int i = 0;
@@ -550,10 +588,17 @@ static struct freq_attr omap_uv_mv_table = {
 	.store = store_uv_mv_table,
 };
 
+static struct freq_attr gpu_oc = {
+       .attr = {.name = "gpu_oc", .mode=0666,},
+       .show = show_gpu_oc,
+       .store = store_gpu_oc,
+};
+
 static struct freq_attr *omap_cpufreq_attr[] = {
 	&cpufreq_freq_attr_scaling_available_freqs,
 	&omap_cpufreq_attr_screen_off_freq,
 	&omap_uv_mv_table,
+	&gpu_oc,
 	NULL,
 };
 
@@ -606,6 +651,7 @@ static struct platform_device omap_cpufreq_device = {
 static int __init omap_cpufreq_init(void)
 {
 	int ret;
+	oc_val = 0;
 
 	if (cpu_is_omap24xx())
 		mpu_clk_name = "virt_prcm_set";
