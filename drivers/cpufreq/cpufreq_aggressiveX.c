@@ -29,6 +29,8 @@
 #include <linux/earlysuspend.h>
 static unsigned int enabled = 0;
 static unsigned int registration = 0;
+static unsigned int dyn_suspend = 0;
+static unsigned int dyn_hotplug = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -327,9 +329,10 @@ static void aggressivex_suspend(int suspend)
         unsigned int cpu;
         cpumask_t tmp_mask;
         struct cpu_dbs_info_s *pcpu;
-
+	
+	dyn_suspend=suspend;
         if (!enabled) return;
-          if (!suspend) {
+          if (!suspend && !dyn_hotplug) {
                 mutex_lock(&dbs_mutex);
                 if (num_online_cpus() < 2) cpu_up(1);
                 for_each_cpu(cpu, &tmp_mask) {
@@ -493,14 +496,16 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	* pr_info("Frequency: %d \n", this_dbs_info->requested_freq);
 	*/
 	/* If 2 cpu's up and max load less than 30, hotplug */
-	if (!suspend){	
+	if (!dyn_suspend){	
 		if (num_online_cpus() <2 && max_load > 30) {
 			cpu_up(1);
 			pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Up\n");
+			dyn_hotplug = 0;
 		}
 		else if (num_online_cpus() > 1 && max_load < 30) {
 			cpu_down(1);
 			pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Down\n");
+			dyn_hotplug = 1;
 		}
 	}
 }
