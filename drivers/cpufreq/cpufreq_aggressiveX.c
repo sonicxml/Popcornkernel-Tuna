@@ -495,14 +495,14 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	* pr_info("Load: %d \n", max_load);
 	* pr_info("Frequency: %d \n", this_dbs_info->requested_freq);
 	*/
-	/* If 2 cpu's up and max load less than 30, hotplug */
+	/* If 2 cpu's up and max load less than 20, hotplug */
 	if (!dyn_suspend){	
-		if (num_online_cpus() <2 && max_load > 30) {
+		if (num_online_cpus() <2 && max_load >= 20) {
 			cpu_up(1);
 			pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Up\n");
 			dyn_hotplug = 0;
 		}
-		else if (num_online_cpus() > 1 && max_load < 30) {
+		else if (num_online_cpus() > 1 && max_load < 20) {
 			cpu_down(1);
 			pr_info("[DYN-HOTPLUGGING] Aggressive: CPU1 Down\n");
 			dyn_hotplug = 1;
