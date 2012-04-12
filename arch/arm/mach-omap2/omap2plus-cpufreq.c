@@ -454,23 +454,27 @@ static ssize_t show_gpu_oc(struct cpufreq_policy *policy, char *buf)
 
 static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size_t size)
 {
-       int prev_oc, ret1, ret2; 
+	int prev_oc, ret1, ret2; 
         struct device *dev;
-       unsigned long gpu_freqs[4] = {307200000,384000000,460000000,512000000};
+	struct voltagedomain *core_voltdm;
+	struct omap_volt_data *vdata;
+	unsigned long gpu_freqs[4] = {307200000,384000000,460000000,512000000};
 
-       prev_oc = oc_val;
-       if (prev_oc < 0 || prev_oc > 3) {
-               // shouldn't be here
-               pr_info("[GPU_OC] GPU_OC value out of range - bailing\n"); 
-               return size;
-       }
+	core_voltdm = voltdm_lookup("core");
+	vdata = omap_voltage_get_curr_vdata(core_voltdm);
+	prev_oc = oc_val;
+	if (prev_oc < 0 || prev_oc > 3) {
+		// shouldn't be here
+		pr_info("[GPU_OC] GPU_OC value out of range - bailing\n"); 
+		return size;
+	}
        
-       sscanf(buf, "%d\n", &oc_val);
-       if (oc_val < 0 ) oc_val = 0;
-       if (oc_val > 3 ) oc_val = 3;
-       if (prev_oc == oc_val) return size;
+	sscanf(buf, "%d\n", &oc_val);
+	if (oc_val < 0 ) oc_val = 0;
+	if (oc_val > 3 ) oc_val = 3;
+	if (prev_oc == oc_val) return size;
 
-        dev = omap_hwmod_name_get_dev("gpu");
+	dev = omap_hwmod_name_get_dev("gpu");
         ret1 = opp_disable(dev, gpu_freqs[prev_oc]);
         ret2 = opp_enable(dev, gpu_freqs[oc_val]);
         pr_info("[GPU_OC] GPU top speed changed from %lu to %lu (%d,%d)\n", 
