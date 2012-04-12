@@ -475,6 +475,10 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
         ret2 = opp_enable(dev, gpu_freqs[oc_val]);
         pr_info("[GPU_OC] GPU top speed changed from %lu to %lu (%d,%d)\n", 
                gpu_freqs[prev_oc], gpu_freqs[oc_val], ret1, ret2);
+	omap_sr_disable(core_voltdm);
+	omap_voltage_calib_reset(core_voltdm);
+	voltdm_reset(core_voltdm);
+	omap_sr_enable(core_voltdm, vdata);
        
        return size;
 }
