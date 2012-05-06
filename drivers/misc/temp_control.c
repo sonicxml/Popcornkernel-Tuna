@@ -14,7 +14,7 @@
 #define TEMPCONTROL_VERSION 1
 
 #define MIN_TEMPLIMIT 50000
-#define MAX_TEMPLIMIT 75000
+#define MAX_TEMPLIMIT 90000
 
 static int temp_limit, original_templimit;
 
