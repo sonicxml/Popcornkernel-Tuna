@@ -484,8 +484,8 @@ static __initdata struct omap_pmic_map omap_twl_map[] = {
 
 /* As per SWCS045 */
 static __initdata struct omap_pmic_description twl6030_pmic_desc = {
-	.pmic_lp_tshut = 25,	/* T-OFF */
-	.pmic_lp_tstart = 800,	/* T-ON */
+	.pmic_lp_tshut = 15,	/* T-OFF */
+	.pmic_lp_tstart = 850,	/* T-ON */
 };
 
 int __init omap_twl_init(void)
