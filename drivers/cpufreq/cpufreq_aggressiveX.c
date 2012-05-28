@@ -29,6 +29,7 @@
 #include <linux/earlysuspend.h>
 static unsigned int enabled = 0;
 static unsigned int registration = 0;
+static unsigned int sr_manual = 0;
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
@@ -213,8 +214,10 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 
 	if (ret != 1)
 		return -EINVAL;
-
-	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+	if (input != 10000) {
+		dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+		sr_manual = 1;
+	}
 	return count;
 }
 
@@ -487,7 +490,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (max_load < 85 && this_dbs_info->requested_freq == 1200000)	
 		__cpufreq_driver_target(policy, 1060000,
 				CPUFREQ_RELATION_H);
-
+	if (!sr_manual) {
+		if (this_dbs_info->requested_freq >= 1060000)
+			dbs_tuners_ins.sampling_rate = 10000;
+		if (this_dbs_info->requested_freq < 1060000)
+			dbs_tuners_ins.sampling_rate = 70000;
+	}
 }
 
 static void do_dbs_timer(struct work_struct *work)
