@@ -482,11 +482,11 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
 	}
        
 	sscanf(buf, "%d\n", &oc_val);
-	if (oc_val = 4 ) {
+	if (oc_val == 4 ) {
 		gpu_oc_boot = 1;
 		oc_val = 1;
 	}
-	if (oc_val = 5 ) {
+	if (oc_val == 5 ) {
 		gpu_oc_boot = 0;
 		oc_val = 0;
 	}
