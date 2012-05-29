@@ -69,6 +69,7 @@ static unsigned int gpu_oc_boot = 0;
 static bool omap_cpufreq_ready;
 static bool omap_cpufreq_suspended;
 static int oc_val;
+static int mpu_slot;
 
 static unsigned int omap_getspeed(unsigned int cpu)
 {
@@ -507,6 +508,55 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
        return size;
 }
 
+
+static ssize_t show_mpu_slot(struct cpufreq_policy *policy, char *buf)
+{
+       return sprintf(buf, "%d\n", mpu_slot);
+}
+
+static ssize_t store_mpu_slot(struct cpufreq_policy *policy, const char *buf, size_t size)
+{
+	int prev_choice, ret1, ret2; 
+        struct device *dev;
+	struct voltagedomain *mpu_voltdm;
+	struct omap_volt_data *vdata;
+	unsigned long mpu_freqs[8] = {0,192000000,350000000,700000000,1060000000,1200000000,1350000000,1420000000};
+
+	mpu_voltdm = voltdm_lookup("mpu");
+	vdata = omap_voltage_get_curr_vdata(mpu_voltdm);
+	prev_choice = mpu_slot;
+
+	if (prev_choice < 0 || prev_choice > 8) {
+		// shouldn't be here
+		pr_info("[MPU_SLOT] Input value out of range - bailing\n"); 
+		return size;
+	}
+       
+	sscanf(buf, "%d\n", &mpu_slot);
+	if (mpu_slot < 0 ) mpu_slot = 0;
+	if (mpu_slot > 8 ) mpu_slot = 8;
+	if (prev_choice == mpu_slot) return size;
+
+	dev = omap_hwmod_name_get_dev("mpu");
+	if (mpu_slot == 0) {
+		ret2 = opp_enable(dev, mpu_freqs[prev_choice]);
+		pr_info("[MPU_SLOT] All MPU Slots Enabled (%d,%d)\n", 
+                ret1, ret2);
+	}
+	else {
+        ret1 = opp_disable(dev, mpu_freqs[mpu_slot]);
+        ret2 = opp_enable(dev, mpu_freqs[prev_choice]);
+        pr_info("[MPU_SLOT] MPU slot %lu disabled (%d,%d)\n", 
+                mpu_freqs[mpu_slot], ret1, ret2);
+	}
+	omap_sr_disable(mpu_voltdm);
+	omap_voltage_calib_reset(mpu_voltdm);
+	voltdm_reset(mpu_voltdm);
+	omap_sr_enable(mpu_voltdm, vdata);
+	msleep(2000);
+        return size;
+}
+
 static ssize_t show_uv_mv_table(struct cpufreq_policy *policy, char *buf)
 {
 	int i = 0;
@@ -622,11 +672,17 @@ static struct freq_attr gpu_oc = {
        .store = store_gpu_oc,
 };
 
+static struct freq_attr mpu_slot_choice = {
+       .attr = {.name = "mpu_slot_choice", .mode=0666,},
+       .show = show_mpu_slot,
+       .store = store_mpu_slot,
+};
 static struct freq_attr *omap_cpufreq_attr[] = {
 	&cpufreq_freq_attr_scaling_available_freqs,
 	&omap_cpufreq_attr_screen_off_freq,
 	&omap_uv_mv_table,
 	&gpu_oc,
+	&mpu_slot_choice,
 	NULL,
 };
 
