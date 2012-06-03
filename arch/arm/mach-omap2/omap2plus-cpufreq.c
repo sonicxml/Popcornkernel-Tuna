@@ -65,7 +65,6 @@ static unsigned int max_capped;
 static unsigned int max_freq;
 static unsigned int current_target_freq;
 static unsigned int screen_off_max_freq;
-static unsigned int gpu_oc_boot = 0;
 static bool omap_cpufreq_ready;
 static bool omap_cpufreq_suspended;
 static int oc_val;
@@ -483,14 +482,8 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
 	}
        
 	sscanf(buf, "%d\n", &oc_val);
-	if (oc_val == 4 ) {
-		gpu_oc_boot = 1;
-		oc_val = 1;
-	}
-	if (oc_val == 5 ) {
-		gpu_oc_boot = 0;
-		oc_val = 0;
-	}
+	if (oc_val == 4 ) oc_val = 1;
+	if (oc_val == 5 ) oc_val = 0;
 	if (oc_val < 0 ) oc_val = 0;
 	if (oc_val > 3 ) oc_val = 3;
 	if (prev_oc == oc_val) return size;
@@ -745,10 +738,12 @@ static struct platform_device omap_cpufreq_device = {
 
 static int __init omap_cpufreq_init(void)
 {
-	int ret;	
-	if (gpu_oc_boot == 0) oc_val = 0;
-	if (gpu_oc_boot == 1) oc_val = 1;
-
+	int ret, i;	
+	oc_val = 0;
+	for (i = 0; i < 7; i++) {
+		mpu_slot[i] = 1;
+	}
+	
 	if (cpu_is_omap24xx())
 		mpu_clk_name = "virt_prcm_set";
 	else if (cpu_is_omap34xx())
