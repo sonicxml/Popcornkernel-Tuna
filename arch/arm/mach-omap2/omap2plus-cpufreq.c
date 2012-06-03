@@ -69,7 +69,7 @@ static unsigned int gpu_oc_boot = 0;
 static bool omap_cpufreq_ready;
 static bool omap_cpufreq_suspended;
 static int oc_val;
-static int mpu_slot;
+static u32 * mpu_slot;
 
 static unsigned int omap_getspeed(unsigned int cpu)
 {
@@ -511,49 +511,60 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
 
 static ssize_t show_mpu_slot(struct cpufreq_policy *policy, char *buf)
 {
-       return sprintf(buf, "%d\n", mpu_slot);
+       return sprintf(buf, "%d %d %d %d %d %d %d\n", mpu_slot[0], mpu_slot[1], mpu_slot[2], mpu_slot[3], mpu_slot[4], mpu_slot[5], mpu_slot[6]);
 }
 
 static ssize_t store_mpu_slot(struct cpufreq_policy *policy, const char *buf, size_t size)
 {
-	int prev_choice, ret1, ret2; 
+	int i;
         struct device *dev;
 	struct voltagedomain *mpu_voltdm;
 	struct omap_volt_data *vdata;
-	unsigned long mpu_freqs[8] = {0,192000000,350000000,700000000,1060000000,1200000000,1350000000,1420000000};
+	unsigned long mpu_freqs[7] = {192000000,350000000,700000000,1060000000,1200000000,1350000000,1420000000};
 
 	mpu_voltdm = voltdm_lookup("mpu");
 	vdata = omap_voltage_get_curr_vdata(mpu_voltdm);
-	prev_choice = mpu_slot;
+	
+	for (i = 0; i < 7; i++) {
+		if (mpu_slot[i] < 0 || mpu_slot[i] > 1) {
+			// shouldn't be here
+			pr_info("[MPU_SLOT] Input value out of range - bailing\n"); 
+			return size;
+		}
+	}
 
-	if (prev_choice < 0 || prev_choice > 8) {
-		// shouldn't be here
-		pr_info("[MPU_SLOT] Input value out of range - bailing\n"); 
+	if (sscanf(buf, "%d %d %d %d %d %d %d\n", &mpu_slot[0], &mpu_slot[1], &mpu_slot[2], &mpu_slot[3], &mpu_slot[4], &mpu_slot[5], &mpu_slot[6]) == 7)
+			pr_info("[MPU_SLOT] Mpu Slot Choices read\n");
+	else {
+		pr_info("[MPU_SLOT] Mpu Slot Choices invalid - exiting\n");
 		return size;
 	}
-       
-	sscanf(buf, "%d\n", &mpu_slot);
-	if (mpu_slot < 0 ) mpu_slot = 0;
-	if (mpu_slot > 8 ) mpu_slot = 8;
-	if (prev_choice == mpu_slot) return size;
 
 	dev = omap_hwmod_name_get_dev("mpu");
-	if (mpu_slot == 0) {
-		ret2 = opp_enable(dev, mpu_freqs[prev_choice]);
-		pr_info("[MPU_SLOT] All MPU Slots Enabled (%d,%d)\n", 
-                ret1, ret2);
+
+	for (i = 0; i < 7; i++)	{	
+		if (mpu_slot[i] < 0 ) {
+			mpu_slot = 0;
+		}
+		else if (mpu_slot[i] > 1 ) {
+			mpu_slot = 1;
+		}
+		if (mpu_slot[i] == 1) {
+			opp_enable(dev, mpu_freqs[i]);
+			pr_info("[MPU_SLOT] MPU slot %lu enabled\n", mpu_freqs[i]);
+		}
+		else if (mpu_slot[i] == 0) {
+			opp_disable(dev, mpu_freqs[i]);
+			pr_info("[MPU_SLOT] MPU slot %lu disabled (%d,%d)\n", mpu_freqs[i]);
+		}
 	}
-	else {
-        ret1 = opp_disable(dev, mpu_freqs[mpu_slot]);
-        ret2 = opp_enable(dev, mpu_freqs[prev_choice]);
-        pr_info("[MPU_SLOT] MPU slot %lu disabled (%d,%d)\n", 
-                mpu_freqs[mpu_slot], ret1, ret2);
-	}
+
 	omap_sr_disable(mpu_voltdm);
 	omap_voltage_calib_reset(mpu_voltdm);
 	voltdm_reset(mpu_voltdm);
 	omap_sr_enable(mpu_voltdm, vdata);
 	msleep(2000);
+
         return size;
 }
 
