@@ -42,7 +42,8 @@
 #include <linux/ethtool.h>
 #include <linux/fcntl.h>
 #include <linux/fs.h>
-#include <linux/wifi_pm.h>
+#include <linux/moduleparam.h>
+#include <linux/module.h>
 
 #include <asm/uaccess.h>
 #include <asm/unaligned.h>
@@ -524,11 +525,13 @@ static void dhd_set_packet_filter(int value, dhd_pub_t *dhd)
 }
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
+bool wifi_pm = false;
+module_param(wifi_pm, bool, 0755);
+EXPORT_SYMBOL(wifi_pm);
+
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
 	int power_mode = PM_MAX;
-	if ( wifi_pm == 1 )
-		power_mode = PM_FAST;
 	/* wl_pkt_filter_enable_t	enable_parm; */
 	char iovbuf[32];
 	int bcn_li_dtim = 3;
@@ -536,6 +539,11 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 
 	DHD_TRACE(("%s: enter, value = %d in_suspend=%d\n",
 		__FUNCTION__, value, dhd->in_suspend));
+
+	if (wifi_pm) {
+		power_mode = PM_FAST;
+		pr_info("[WIFI_PM] %p Wi-Fi Power Management policy changed to PM_FAST.", __func__);
+	}
 
 	if (dhd && dhd->up) {
 		if (value && dhd->in_suspend) {
