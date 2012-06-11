@@ -68,7 +68,6 @@ static unsigned int screen_off_max_freq;
 static bool omap_cpufreq_ready;
 static bool omap_cpufreq_suspended;
 static int oc_val;
-static u32 * mpu_slot;
 
 static unsigned int omap_getspeed(unsigned int cpu)
 {
@@ -500,66 +499,6 @@ static ssize_t store_gpu_oc(struct cpufreq_policy *policy, const char *buf, size
        return size;
 }
 
-
-static ssize_t show_mpu_slot(struct cpufreq_policy *policy, char *buf)
-{
-       return sprintf(buf, "%d %d %d %d %d %d %d\n", mpu_slot[0], mpu_slot[1], mpu_slot[2], mpu_slot[3], mpu_slot[4], mpu_slot[5], mpu_slot[6]);
-}
-
-static ssize_t store_mpu_slot(struct cpufreq_policy *policy, const char *buf, size_t size)
-{
-	int i;
-        struct device *dev;
-	struct voltagedomain *mpu_voltdm;
-	struct omap_volt_data *vdata;
-	unsigned long mpu_freqs[7] = {192000000,350000000,700000000,1060000000,1200000000,1350000000,1420000000};
-
-	mpu_voltdm = voltdm_lookup("mpu");
-	vdata = omap_voltage_get_curr_vdata(mpu_voltdm);
-	
-	for (i = 0; i < 7; i++) {
-		if (mpu_slot[i] < 0 || mpu_slot[i] > 1) {
-			// shouldn't be here
-			pr_info("[MPU_SLOT] Input value out of range - bailing\n"); 
-			return size;
-		}
-	}
-
-	if (sscanf(buf, "%d %d %d %d %d %d %d\n", &mpu_slot[0], &mpu_slot[1], &mpu_slot[2], &mpu_slot[3], &mpu_slot[4], &mpu_slot[5], &mpu_slot[6]) == 7)
-			pr_info("[MPU_SLOT] Mpu Slot Choices read\n");
-	else {
-		pr_info("[MPU_SLOT] Mpu Slot Choices invalid - exiting\n");
-		return size;
-	}
-
-	dev = omap_hwmod_name_get_dev("mpu");
-
-	for (i = 0; i < 7; i++)	{	
-		if (mpu_slot[i] < 0 ) {
-			mpu_slot = 0;
-		}
-		else if (mpu_slot[i] > 1 ) {
-			mpu_slot = 1;
-		}
-		if (mpu_slot[i] == 1) {
-			opp_enable(dev, mpu_freqs[i]);
-			pr_info("[MPU_SLOT] MPU slot %lu enabled\n", mpu_freqs[i]);
-		}
-		else if (mpu_slot[i] == 0) {
-			opp_disable(dev, mpu_freqs[i]);
-			pr_info("[MPU_SLOT] MPU slot %lu disabled (%d,%d)\n", mpu_freqs[i]);
-		}
-	}
-
-	omap_sr_disable(mpu_voltdm);
-	omap_voltage_calib_reset(mpu_voltdm);
-	voltdm_reset(mpu_voltdm);
-	omap_sr_enable(mpu_voltdm, vdata);
-	msleep(2000);
-
-        return size;
-}
-
 static ssize_t show_uv_mv_table(struct cpufreq_policy *policy, char *buf)
 {
 	int i = 0;
@@ -737,11 +676,8 @@ static struct platform_device omap_cpufreq_device = {
 
 static int __init omap_cpufreq_init(void)
 {
-	int ret, i;	
+	int ret;	
 	oc_val = 0;
-	for (i = 0; i < 7; i++) {
-		mpu_slot[i] = 1;
-	}
 	
 	if (cpu_is_omap24xx())
 		mpu_clk_name = "virt_prcm_set";
