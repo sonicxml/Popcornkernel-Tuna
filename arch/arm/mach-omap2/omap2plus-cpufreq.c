@@ -614,17 +614,11 @@ static struct freq_attr gpu_oc = {
        .store = store_gpu_oc,
 };
 
-static struct freq_attr mpu_slot_choice = {
-       .attr = {.name = "mpu_slot_choice", .mode=0666,},
-       .show = show_mpu_slot,
-       .store = store_mpu_slot,
-};
 static struct freq_attr *omap_cpufreq_attr[] = {
 	&cpufreq_freq_attr_scaling_available_freqs,
 	&omap_cpufreq_attr_screen_off_freq,
 	&omap_uv_mv_table,
 	&gpu_oc,
-	&mpu_slot_choice,
 	NULL,
 };
 
