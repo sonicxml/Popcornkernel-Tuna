@@ -1,0 +1,28 @@
+--- drivers/usb/musb/omap2430.c	2012-06-09 11:33:45.000000000 -0400
++++ drivers/usb/musb/omap2430.c	2012-02-20 16:43:19.000000000 -0500
+@@ -312,7 +311,7 @@
+ 
+ 	status = pm_runtime_get_sync(dev);
+ 	if (status < 0) {
+-		dev_err(dev, "pm_runtime_get_sync FAILED %d\n", status);
++		dev_err(dev, "pm_runtime_get_sync FAILED");
+ 		goto err1;
+ 	}
+ 
+@@ -464,14 +463,14 @@
+ 		goto err2;
+ 	}
+ 
+-	pm_runtime_enable(&pdev->dev);
+-
+ 	ret = platform_device_add(musb);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "failed to register musb device\n");
+ 		goto err2;
+ 	}
+ 
++	pm_runtime_enable(&pdev->dev);
++
+ 	return 0;
+ 
+ err2:

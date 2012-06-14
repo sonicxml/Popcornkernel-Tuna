@@ -1,0 +1,10 @@
+--- drivers/usb/core/hub.c	2012-02-20 16:43:19.000000000 -0500
++++ drivers/usb/core/hub.c	2012-06-09 11:33:45.000000000 -0400
+@@ -1644,7 +1648,6 @@
+ {
+ 	struct usb_device	*udev = *pdev;
+ 	int			i;
+-	struct usb_hcd		*hcd = bus_to_hcd(udev->bus);
+ 
+ 	if (!udev) {
+ 		pr_debug ("%s nodev\n", __func__);
