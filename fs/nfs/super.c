@@ -2694,15 +2694,11 @@ static struct vfsmount *nfs_do_root_mount(struct file_system_type *fs_type,
 	char *root_devname;
 	size_t len;
 
-	len = strlen(hostname) + 5;
+	len = strlen(hostname) + 3;
 	root_devname = kmalloc(len, GFP_KERNEL);
 	if (root_devname == NULL)
 		return ERR_PTR(-ENOMEM);
-	/* Does hostname needs to be enclosed in brackets? */
-	if (strchr(hostname, ':'))
-		snprintf(root_devname, len, "[%s]:/", hostname);
-	else
-		snprintf(root_devname, len, "%s:/", hostname);
+	snprintf(root_devname, len, "%s:/", hostname);
 	root_mnt = vfs_kern_mount(fs_type, flags, root_devname, data);
 	kfree(root_devname);
 	return root_mnt;

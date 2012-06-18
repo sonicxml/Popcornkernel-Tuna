@@ -398,7 +398,7 @@ static struct sk_buff *asix_tx_fixup(struct usbnet *dev, struct sk_buff *skb,
 	u32 packet_len;
 	u32 padbytes = 0xffff0000;
 
-	padlen = ((skb->len + 4) & (dev->maxpacket - 1)) ? 0 : 4;
+	padlen = ((skb->len + 4) % 512) ? 0 : 4;
 
 	if ((!skb_cloned(skb)) &&
 	    ((headroom + tailroom) >= (4 + padlen))) {
@@ -420,7 +420,7 @@ static struct sk_buff *asix_tx_fixup(struct usbnet *dev, struct sk_buff *skb,
 	cpu_to_le32s(&packet_len);
 	skb_copy_to_linear_data(skb, &packet_len, sizeof(packet_len));
 
-	if (padlen) {
+	if ((skb->len % 512) == 0) {
 		cpu_to_le32s(&padbytes);
 		memcpy(skb_tail_pointer(skb), &padbytes, sizeof(padbytes));
 		skb_put(skb, sizeof(padbytes));
@@ -1484,10 +1484,6 @@ static const struct usb_device_id	products [] = {
 	// Sitecom LN-029 "USB 2.0 10/100 Ethernet adapter"
 	USB_DEVICE (0x6189, 0x182d),
 	.driver_info =  (unsigned long) &ax8817x_info,
-}, {
-	// Sitecom LN-031 "USB 2.0 10/100/1000 Ethernet adapter"
-	USB_DEVICE (0x0df6, 0x0056),
-	.driver_info =  (unsigned long) &ax88178_info,
 }, {
 	// corega FEther USB2-TX
 	USB_DEVICE (0x07aa, 0x0017),

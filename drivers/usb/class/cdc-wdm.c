@@ -108,9 +108,8 @@ static void wdm_out_callback(struct urb *urb)
 	spin_lock(&desc->iuspin);
 	desc->werr = urb->status;
 	spin_unlock(&desc->iuspin);
-	kfree(desc->outbuf);
-	desc->outbuf = NULL;
 	clear_bit(WDM_IN_USE, &desc->flags);
+	kfree(desc->outbuf);
 	wake_up(&desc->wait);
 }
 
@@ -313,7 +312,7 @@ static ssize_t wdm_write
 	if (we < 0)
 		return -EIO;
 
-	buf = kmalloc(count, GFP_KERNEL);
+	desc->outbuf = buf = kmalloc(count, GFP_KERNEL);
 	if (!buf) {
 		rv = -ENOMEM;
 		goto outnl;
@@ -377,12 +376,10 @@ static ssize_t wdm_write
 	req->wIndex = desc->inum;
 	req->wLength = cpu_to_le16(count);
 	set_bit(WDM_IN_USE, &desc->flags);
-	desc->outbuf = buf;
 
 	rv = usb_submit_urb(desc->command, GFP_KERNEL);
 	if (rv < 0) {
 		kfree(buf);
-		desc->outbuf = NULL;
 		clear_bit(WDM_IN_USE, &desc->flags);
 		dev_err(&desc->intf->dev, "Tx URB error: %d\n", rv);
 	} else {
@@ -400,7 +397,7 @@ outnl:
 static ssize_t wdm_read
 (struct file *file, char __user *buffer, size_t count, loff_t *ppos)
 {
-	int rv, cntr;
+	int rv, cntr = 0;
 	int i = 0;
 	struct wdm_device *desc = file->private_data;
 
@@ -409,8 +406,7 @@ static ssize_t wdm_read
 	if (rv < 0)
 		return -ERESTARTSYS;
 
-	cntr = ACCESS_ONCE(desc->length);
-	if (cntr == 0) {
+	if (desc->length == 0) {
 		desc->read = 0;
 retry:
 		if (test_bit(WDM_DISCONNECTING, &desc->flags)) {
@@ -460,30 +456,26 @@ retry:
 			spin_unlock_irq(&desc->iuspin);
 			goto retry;
 		}
-		cntr = desc->length;
+		clear_bit(WDM_READ, &desc->flags);
 		spin_unlock_irq(&desc->iuspin);
 	}
 
-	if (cntr > count)
-		cntr = count;
+	cntr = count > desc->length ? desc->length : count;
 	rv = copy_to_user(buffer, desc->ubuf, cntr);
 	if (rv > 0) {
 		rv = -EFAULT;
 		goto err;
 	}
 
-	spin_lock_irq(&desc->iuspin);
-
 	for (i = 0; i < desc->length - cntr; i++)
 		desc->ubuf[i] = desc->ubuf[i + cntr];
 
+	spin_lock_irq(&desc->iuspin);
 	desc->length -= cntr;
+	spin_unlock_irq(&desc->iuspin);
 	/* in case we had outstanding data */
 	if (!desc->length)
 		clear_bit(WDM_READ, &desc->flags);
-
-	spin_unlock_irq(&desc->iuspin);
-
 	rv = cntr;
 
 err:
@@ -511,7 +503,7 @@ static unsigned int wdm_poll(struct file *file, struct poll_table_struct *wait)
 
 	spin_lock_irqsave(&desc->iuspin, flags);
 	if (test_bit(WDM_DISCONNECTING, &desc->flags)) {
-		mask = POLLHUP | POLLERR;
+		mask = POLLERR;
 		spin_unlock_irqrestore(&desc->iuspin, flags);
 		goto desc_out;
 	}

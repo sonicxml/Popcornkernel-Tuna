@@ -3956,14 +3956,16 @@ out:
  * vfs_test_lock.  (Arguably perhaps test_lock should be done with an
  * inode operation.)
  */
-static __be32 nfsd_test_lock(struct svc_rqst *rqstp, struct svc_fh *fhp, struct file_lock *lock)
+static int nfsd_test_lock(struct svc_rqst *rqstp, struct svc_fh *fhp, struct file_lock *lock)
 {
 	struct file *file;
-	__be32 err = nfsd_open(rqstp, fhp, S_IFREG, NFSD_MAY_READ, &file);
-	if (!err) {
-		err = nfserrno(vfs_test_lock(file, lock));
-		nfsd_close(file);
-	}
+	int err;
+
+	err = nfsd_open(rqstp, fhp, S_IFREG, NFSD_MAY_READ, &file);
+	if (err)
+		return err;
+	err = vfs_test_lock(file, lock);
+	nfsd_close(file);
 	return err;
 }
 
@@ -3976,6 +3978,7 @@ nfsd4_lockt(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
 {
 	struct inode *inode;
 	struct file_lock file_lock;
+	int error;
 	__be32 status;
 
 	if (locks_in_grace())
@@ -4027,10 +4030,12 @@ nfsd4_lockt(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
 
 	nfs4_transform_lock_offset(&file_lock);
 
-	status = nfsd_test_lock(rqstp, &cstate->current_fh, &file_lock);
-	if (status)
+	status = nfs_ok;
+	error = nfsd_test_lock(rqstp, &cstate->current_fh, &file_lock);
+	if (error) {
+		status = nfserrno(error);
 		goto out;
-
+	}
 	if (file_lock.fl_type != F_UNLCK) {
 		status = nfserr_denied;
 		nfs4_set_lock_denied(&file_lock, &lockt->lt_denied);

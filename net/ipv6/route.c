@@ -2411,12 +2411,8 @@ static int rt6_fill_node(struct net *net,
 
 	rcu_read_lock();
 	n = dst_get_neighbour(&rt->dst);
-	if (n) {
-		if (nla_put(skb, RTA_GATEWAY, 16, &n->primary_key) < 0) {
-			rcu_read_unlock();
-			goto nla_put_failure;
-		}
-	}
+	if (n)
+		NLA_PUT(skb, RTA_GATEWAY, 16, &n->primary_key);
 	rcu_read_unlock();
 
 	if (rt->dst.dev)

@@ -205,10 +205,6 @@ struct xhci_op_regs {
 #define CMD_PM_INDEX	(1 << 11)
 /* bits 12:31 are reserved (and should be preserved on writes). */
 
-/* IMAN - Interrupt Management Register */
-#define IMAN_IP		(1 << 1)
-#define IMAN_IE		(1 << 0)
-
 /* USBSTS - USB status - status bitmasks */
 /* HC not running - set to 1 when run/stop bit is cleared. */
 #define STS_HALT	XHCI_STS_HALT
@@ -1315,7 +1311,6 @@ struct xhci_hcd {
 #define XHCI_BROKEN_MSI		(1 << 6)
 #define XHCI_RESET_ON_RESUME	(1 << 7)
 #define XHCI_AMD_0x96_HOST	(1 << 9)
-#define XHCI_TRUST_TX_LENGTH	(1 << 10)
 	unsigned int		num_active_eps;
 	unsigned int		limit_active_eps;
 	/* There are two roothubs to keep track of bus suspend info for */

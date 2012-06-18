@@ -2558,14 +2558,15 @@ static int handle_ir_buffer_fill(struct context *context,
 	struct iso_context *ctx =
 		container_of(context, struct iso_context, context);
 
-	if (last->res_count != 0)
+	if (!last->transfer_status)
 		/* Descriptor(s) not done yet, stop iteration */
 		return 0;
 
 	if (le16_to_cpu(last->control) & DESCRIPTOR_IRQ_ALWAYS)
 		ctx->base.callback.mc(&ctx->base,
 				      le32_to_cpu(last->data_address) +
-				      le16_to_cpu(last->req_count),
+				      le16_to_cpu(last->req_count) -
+				      le16_to_cpu(last->res_count),
 				      ctx->base.callback_data);
 
 	return 1;

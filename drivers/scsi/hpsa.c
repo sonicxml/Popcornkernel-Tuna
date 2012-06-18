@@ -1654,26 +1654,30 @@ static void figure_bus_target_lun(struct ctlr_info *h,
 
 	if (is_logical_dev_addr_mode(lunaddrbytes)) {
 		/* logical device */
-		lunid = le32_to_cpu(*((__le32 *) lunaddrbytes));
-		if (is_msa2xxx(h, device)) {
-			/* msa2xxx way, put logicals on bus 1
-			 * and match target/lun numbers box
-			 * reports.
+		if (unlikely(is_scsi_rev_5(h))) {
+			/* p1210m, logical drives lun assignments
+			 * match SCSI REPORT LUNS data.
 			 */
-			*bus = 1;
-			*target = (lunid >> 16) & 0x3fff;
-			*lun = lunid & 0x00ff;
+			lunid = le32_to_cpu(*((__le32 *) lunaddrbytes));
+			*bus = 0;
+			*target = 0;
+			*lun = (lunid & 0x3fff) + 1;
 		} else {
-			if (likely(is_scsi_rev_5(h))) {
-				/* All current smart arrays (circa 2011) */
-				*bus = 0;
-				*target = 0;
-				*lun = (lunid & 0x3fff) + 1;
+			/* not p1210m... */
+			lunid = le32_to_cpu(*((__le32 *) lunaddrbytes));
+			if (is_msa2xxx(h, device)) {
+				/* msa2xxx way, put logicals on bus 1
+				 * and match target/lun numbers box
+				 * reports.
+				 */
+				*bus = 1;
+				*target = (lunid >> 16) & 0x3fff;
+				*lun = lunid & 0x00ff;
 			} else {
-				/* Traditional old smart array way. */
+				/* Traditional smart array way. */
 				*bus = 0;
-				*target = lunid & 0x3fff;
 				*lun = 0;
+				*target = lunid & 0x3fff;
 			}
 		}
 	} else {
@@ -4033,10 +4037,10 @@ static int hpsa_request_irq(struct ctlr_info *h,
 
 	if (h->msix_vector || h->msi_vector)
 		rc = request_irq(h->intr[h->intr_mode], msixhandler,
-				0, h->devname, h);
+				IRQF_DISABLED, h->devname, h);
 	else
 		rc = request_irq(h->intr[h->intr_mode], intxhandler,
-				IRQF_SHARED, h->devname, h);
+				IRQF_DISABLED, h->devname, h);
 	if (rc) {
 		dev_err(&h->pdev->dev, "unable to get irq %d for %s\n",
 		       h->intr[h->intr_mode], h->devname);

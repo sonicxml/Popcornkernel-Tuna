@@ -812,7 +812,6 @@ nfsd4_setattr(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
 	      struct nfsd4_setattr *setattr)
 {
 	__be32 status = nfs_ok;
-	int err;
 
 	if (setattr->sa_iattr.ia_valid & ATTR_SIZE) {
 		nfs4_lock_state();
@@ -824,9 +823,9 @@ nfsd4_setattr(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
 			return status;
 		}
 	}
-	err = mnt_want_write(cstate->current_fh.fh_export->ex_path.mnt);
-	if (err)
-		return nfserrno(err);
+	status = mnt_want_write(cstate->current_fh.fh_export->ex_path.mnt);
+	if (status)
+		return status;
 	status = nfs_ok;
 
 	status = check_attr_support(rqstp, cstate, setattr->sa_bmval,

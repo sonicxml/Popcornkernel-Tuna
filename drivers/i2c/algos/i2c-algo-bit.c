@@ -103,14 +103,8 @@ static int sclhi(struct i2c_algo_bit_data *adap)
 		 * chips may hold it low ("clock stretching") while they
 		 * are processing data internally.
 		 */
-		if (time_after(jiffies, start + adap->timeout)) {
-			/* Test one last time, as we may have been preempted
-			 * between last check and timeout test.
-			 */
-			if (getscl(adap))
-				break;
+		if (time_after(jiffies, start + adap->timeout))
 			return -ETIMEDOUT;
-		}
 		cond_resched();
 	}
 #ifdef DEBUG

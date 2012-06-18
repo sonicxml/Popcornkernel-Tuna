@@ -289,7 +289,7 @@ void bpf_jit_compile(struct sk_filter *fp)
 					EMIT2(0x24, K & 0xFF); /* and imm8,%al */
 				} else if (K >= 0xFFFF0000) {
 					EMIT2(0x66, 0x25);	/* and imm16,%ax */
-					EMIT(K, 2);
+					EMIT2(K, 2);
 				} else {
 					EMIT1_off32(0x25, K);	/* and imm32,%eax */
 				}
@@ -475,10 +475,8 @@ void bpf_jit_compile(struct sk_filter *fp)
 			case BPF_S_LD_W_ABS:
 				func = sk_load_word;
 common_load:			seen |= SEEN_DATAREF;
-				if ((int)K < 0) {
-					/* Abort the JIT because __load_pointer() is needed. */
+				if ((int)K < 0)
 					goto out;
-				}
 				t_offset = func - (image + addrs[i]);
 				EMIT1_off32(0xbe, K); /* mov imm32,%esi */
 				EMIT1_off32(0xe8, t_offset); /* call */
@@ -491,8 +489,14 @@ common_load:			seen |= SEEN_DATAREF;
 				goto common_load;
 			case BPF_S_LDX_B_MSH:
 				if ((int)K < 0) {
-					/* Abort the JIT because __load_pointer() is needed. */
-					goto out;
+					if (pc_ret0 > 0) {
+						/* addrs[pc_ret0 - 1] is the start address */
+						EMIT_JMP(addrs[pc_ret0 - 1] - addrs[i]);
+						break;
+					}
+					CLEAR_A();
+					EMIT_JMP(cleanup_addr - addrs[i]);
+					break;
 				}
 				seen |= SEEN_DATAREF | SEEN_XREG;
 				t_offset = sk_load_byte_msh - (image + addrs[i]);
