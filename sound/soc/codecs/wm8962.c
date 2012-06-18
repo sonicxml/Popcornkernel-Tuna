@@ -2975,13 +2975,13 @@ static int wm8962_hw_params(struct snd_pcm_substream *substream,
 	case SNDRV_PCM_FORMAT_S16_LE:
 		break;
 	case SNDRV_PCM_FORMAT_S20_3LE:
-		aif0 |= 0x4;
+		aif0 |= 0x40;
 		break;
 	case SNDRV_PCM_FORMAT_S24_LE:
-		aif0 |= 0x8;
+		aif0 |= 0x80;
 		break;
 	case SNDRV_PCM_FORMAT_S32_LE:
-		aif0 |= 0xc;
+		aif0 |= 0xc0;
 		break;
 	default:
 		return -EINVAL;

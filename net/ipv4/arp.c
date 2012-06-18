@@ -518,32 +518,26 @@ EXPORT_SYMBOL(arp_find);
 
 /* END OF OBSOLETE FUNCTIONS */
 
-struct neighbour *__arp_bind_neighbour(struct dst_entry *dst, __be32 nexthop)
-{
-	struct net_device *dev = dst->dev;
-
-	if (dev->flags & (IFF_LOOPBACK | IFF_POINTOPOINT))
-		nexthop = 0;
-	return __neigh_lookup_errno(
-#if defined(CONFIG_ATM_CLIP) || defined(CONFIG_ATM_CLIP_MODULE)
-		dev->type == ARPHRD_ATM ?
-		clip_tbl_hook :
-#endif
-		&arp_tbl, &nexthop, dev);
-}
-
 int arp_bind_neighbour(struct dst_entry *dst)
 {
 	struct net_device *dev = dst->dev;
-	struct neighbour *n = dst_get_neighbour(dst);
+	struct neighbour *n = dst->neighbour;
 
 	if (dev == NULL)
 		return -EINVAL;
 	if (n == NULL) {
-		n = __arp_bind_neighbour(dst, ((struct rtable *)dst)->rt_gateway);
+		__be32 nexthop = ((struct rtable *)dst)->rt_gateway;
+		if (dev->flags & (IFF_LOOPBACK | IFF_POINTOPOINT))
+			nexthop = 0;
+		n = __neigh_lookup_errno(
+#if defined(CONFIG_ATM_CLIP) || defined(CONFIG_ATM_CLIP_MODULE)
+					 dev->type == ARPHRD_ATM ?
+					 clip_tbl_hook :
+#endif
+					 &arp_tbl, &nexthop, dev);
 		if (IS_ERR(n))
 			return PTR_ERR(n);
-		dst_set_neighbour(dst, n);
+		dst->neighbour = n;
 	}
 	return 0;
 }
