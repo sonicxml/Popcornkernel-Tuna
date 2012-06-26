@@ -291,9 +291,8 @@ void page_table_free_rcu(struct mmu_gather *tlb, unsigned long *table)
 
 void __tlb_remove_table(void *_table)
 {
-	const unsigned long mask = (FRAG_MASK << 4) | FRAG_MASK;
-	void *table = (void *)((unsigned long) _table & ~mask);
-	unsigned type = (unsigned long) _table & mask;
+	void *table = (void *)((unsigned long) _table & PAGE_MASK);
+	unsigned type = (unsigned long) _table & ~PAGE_MASK;
 
 	if (type)
 		__page_table_free_rcu(table, type);

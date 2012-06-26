@@ -319,7 +319,10 @@ static struct scsi_device *scsi_alloc_sdev(struct scsi_target *starget,
 	return sdev;
 
 out_device_destroy:
-	__scsi_remove_device(sdev);
+	scsi_device_set_state(sdev, SDEV_DEL);
+	transport_destroy_device(&sdev->sdev_gendev);
+	put_device(&sdev->sdev_dev);
+	put_device(&sdev->sdev_gendev);
 out:
 	if (display_failure_msg)
 		printk(ALLOC_FAILURE_MSG, __func__);
