@@ -2777,15 +2777,10 @@ static inline u32 transport_get_sectors_6(
 
 	/*
 	 * Everything else assume TYPE_DISK Sector CDB location.
-	 * Use 8-bit sector value.  SBC-3 says:
-	 *
-	 *   A TRANSFER LENGTH field set to zero specifies that 256
-	 *   logical blocks shall be written.  Any other value
-	 *   specifies the number of logical blocks that shall be
-	 *   written.
+	 * Use 8-bit sector value.
 	 */
 type_disk:
-	return cdb[4] ? : 256;
+	return (u32)cdb[4];
 }
 
 static inline u32 transport_get_sectors_10(
