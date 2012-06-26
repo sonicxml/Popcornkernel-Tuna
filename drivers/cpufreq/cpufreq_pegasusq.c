@@ -822,11 +822,11 @@ static void cpu_up_work(struct work_struct *work)
 	if (hotplug_lock)
 		nr_up = hotplug_lock - online;
 
-	if (online == 1) {
+/*	if (online == 1) {
 		printk(KERN_ERR "CPU_UP 3\n");
 		cpu_up(num_possible_cpus() - 1);
 		nr_up -= 1;
-	}
+	}*/
 
 	for_each_cpu_not(cpu, cpu_online_mask) {
 		if (nr_up-- == 0)
