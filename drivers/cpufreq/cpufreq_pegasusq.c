@@ -35,6 +35,11 @@
 #include <linux/earlysuspend.h>
 #endif
 
+static unsigned int sr_manual = 0;
+static unsigned int prev_load1 = 70;
+static unsigned int prev_load2 = 70;
+static unsigned int prev_load3 = 70;
+
 /*
  * runqueue average
  */
@@ -149,7 +154,7 @@ static unsigned int get_nr_run_avg(void)
 #define DEF_FREQUENCY_MIN_SAMPLE_RATE		(10000)
 #define MIN_FREQUENCY_UP_THRESHOLD		(7)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
-#define DEF_SAMPLING_RATE			(50000)
+#define DEF_SAMPLING_RATE			(40000)
 #define MIN_SAMPLING_RATE			(10000)
 #define MAX_HOTPLUG_RATE			(40u)
 
@@ -517,7 +522,10 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 	ret = sscanf(buf, "%u", &input);
 	if (ret != 1)
 		return -EINVAL;
-	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+	if (input != 40000) {
+		dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+		sr_manual = 1;
+	}
 	return count;
 }
 
@@ -546,7 +554,10 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 	    input < MIN_FREQUENCY_UP_THRESHOLD) {
 		return -EINVAL;
 	}
-	dbs_tuners_ins.up_threshold = input;
+	if (input != 70) {
+		dbs_tuners_ins.up_threshold = input;
+		sr_manual = 1;
+	}
 	return count;
 }
 
@@ -560,8 +571,11 @@ static ssize_t store_sampling_down_factor(struct kobject *a,
 
 	if (ret != 1 || input > MAX_SAMPLING_DOWN_FACTOR || input < 1)
 		return -EINVAL;
-	dbs_tuners_ins.sampling_down_factor = input;
-
+	if (input != 2) {
+		dbs_tuners_ins.sampling_down_factor = input;
+		sr_manual = 1;
+	}
+	
 	/* Reset down sampling multiplier in case it was active */
 	for_each_online_cpu(j) {
 		struct cpu_dbs_info_s *dbs_info;
@@ -1001,7 +1015,9 @@ static int check_down(void)
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
 	unsigned int max_load_freq;
-
+	unsigned int avg_load;
+	unsigned int max_load;
+	
 	struct cpufreq_policy *policy;
 	unsigned int j;
 	int num_hist = hotplug_history->num_hist;
@@ -1070,6 +1086,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 		load = 100 * (wall_time - idle_time) / wall_time;
 		hotplug_history->usage[num_hist].load[j] = load;
+		max_load = load;
 
 		freq_avg = __cpufreq_driver_getavg(policy, j);
 		if (freq_avg <= 0)
@@ -1148,6 +1165,39 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		__cpufreq_driver_target(policy, freq_next,
 					CPUFREQ_RELATION_L);
 	}
+	
+	/*
+	* A system of weighted load averages to control governor tunables
+	* (C) 2012 sonicxml <sonicxml@gmail.com>
+	*/
+	if (!sr_manual) {
+		avg_load = ((4 * max_load) + (3 * prev_load1) + (2 * prev_load2) + prev_load3);
+		avg_load = (avg_load/10);
+//		printk("AVG-LOAD: %d \n",avg_load);
+			if (avg_load < 30) {
+				dbs_tuners_ins.sampling_rate = 40000;
+				dbs_tuners_ins.up_threshold = 70;
+				dbs_tuners_ins.sampling_down_factor = 1; 
+			}
+			else if (avg_load >= 40) {
+				dbs_tuners_ins.sampling_rate = 30000;
+				dbs_tuners_ins.up_threshold = 70;
+				dbs_tuners_ins.sampling_down_factor = 2; 
+			}
+			else if (avg_load >= 80) {
+				dbs_tuners_ins.sampling_rate = 20000;
+				dbs_tuners_ins.up_threshold = 65;
+				dbs_tuners_ins.sampling_down_factor = 3; 
+			}
+			else if (avg_load >= 90) {
+				dbs_tuners_ins.sampling_rate = 10000;
+				dbs_tuners_ins.up_threshold = 60;
+				dbs_tuners_ins.sampling_down_factor = 4; 
+			}
+	}
+	prev_load3 = prev_load2;
+	prev_load2 = prev_load1;
+	prev_load1 = max_load;
 }
 
 static void do_dbs_timer(struct work_struct *work)
